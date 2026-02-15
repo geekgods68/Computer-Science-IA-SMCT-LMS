@@ -1,0 +1,195 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="welcome-text">Welcome, admin!</div>
+<div class="page-title">Create Class/Session</div>
+
+<form method="post" enctype="multipart/form-data" style="max-width: 800px;">
+    <!-- Name Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;" id="nameLabel">Name</label>
+        <input type="text" name="name" id="nameInput" required placeholder="Enter class/session name" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+    </div>
+
+    <!-- Type Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Type</label>
+        <select name="type" id="type" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;" onchange="updateLabels()">
+            <option value="">Select Type</option>
+            <option value="class">Class</option>
+            <option value="session">Session</option>
+        </select>
+    </div>
+
+    <!-- Description Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Description</label>
+        <textarea name="description" placeholder="Enter description (optional)" style="width: 100%; height: 120px; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; resize: vertical; font-family: inherit;"></textarea>
+    </div>
+
+    <!-- Meeting Link Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Meeting Link</label>
+        <input type="url" name="meeting_link" placeholder="e.g., https://zoom.us/j/123456789 or https://teams.microsoft.com/..." style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+        <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Enter the virtual meeting link for online classes (optional)</div>
+    </div>
+
+    <!-- Grade Level Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Grade Level</label>
+        <input type="text" name="grade_level" placeholder="e.g., 10, 11, 12" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+    </div>
+
+    <!-- Subject Field -->
+    <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Subject</label>
+        <select name="subject" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+            <option value="">Select Subject</option>
+            <option value="Math">Math</option>
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Science">Science</option>
+            <option value="Social Science">Social Science</option>
+            <option value="Other">Other</option>
+        </select>
+        <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Choose the subject that this class will teach</div>
+    </div>
+
+    <!-- Schedule Days and Time Fields -->
+    <div style="display: flex; gap: 40px; margin-bottom: 24px; align-items: flex-start;">
+        <!-- Schedule Days -->
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 12px;">Schedule Days</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Monday" style="margin-right: 6px;">
+                    Mon
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Tuesday" style="margin-right: 6px;">
+                    Tue
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Wednesday" style="margin-right: 6px;">
+                    Wed
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Thursday" style="margin-right: 6px;">
+                    Thu
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Friday" style="margin-right: 6px;">
+                    Fri
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Saturday" style="margin-right: 6px;">
+                    Sat
+                </label>
+                <label style="display: flex; align-items: center; font-size: 14px; color: #374151; cursor: pointer;">
+                    <input type="checkbox" name="schedule_days" value="Sunday" style="margin-right: 6px;">
+                    Sun
+                </label>
+            </div>
+        </div>
+
+        <!-- Start Time -->
+        <div style="flex: 0 0 150px;">
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Start Time</label>
+            <input type="time" name="schedule_time_start" value="12:30" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+        </div>
+
+        <!-- End Time -->
+        <div style="flex: 0 0 150px;">
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">End Time</label>
+            <input type="time" name="schedule_time_end" value="12:30" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+        </div>
+    </div>
+
+    <!-- Schedule PDF and Maximum Students -->
+    <div style="display: flex; gap: 40px; margin-bottom: 32px; align-items: flex-start;">
+        <!-- Schedule PDF -->
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Schedule PDF</label>
+            <input type="file" name="schedule_pdf" accept=".pdf" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+            <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Upload a PDF schedule for students to download (optional)</div>
+        </div>
+
+        <!-- Maximum Students -->
+        <div style="flex: 0 0 200px;">
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Maximum Students</label>
+            <input type="number" name="max_students" value="30" min="1" max="100" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display: flex; gap: 12px;">
+        <button type="submit" id="submitButton" style="background-color: #3b82f6; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer;">
+            Create
+        </button>
+        <a href="{{ url_for('admin.view_classes') }}" style="background-color: #6b7280; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; text-decoration: none; display: inline-block;">
+            Cancel
+        </a>
+    </div>
+</form>
+
+<script>
+function updateLabels() {
+    const typeSelect = document.getElementById('type');
+    const submitButton = document.getElementById('submitButton');
+    const nameLabel = document.getElementById('nameLabel');
+    const nameInput = document.getElementById('nameInput');
+    
+    if (typeSelect.value === 'class') {
+        submitButton.textContent = 'Create Class';
+        nameLabel.textContent = 'Class Name';
+        nameInput.placeholder = 'Enter class name (e.g., Math Class 10A)';
+    } else if (typeSelect.value === 'session') {
+        submitButton.textContent = 'Create Session';
+        nameLabel.textContent = 'Session Name';
+        nameInput.placeholder = 'Enter session name (e.g., Extra Math Practice)';
+    } else {
+        submitButton.textContent = 'Create';
+        nameLabel.textContent = 'Name';
+        nameInput.placeholder = 'Enter class/session name';
+    }
+}
+
+// Add focus styles
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+</script>
+
+<style>
+button:hover {
+    opacity: 0.9;
+}
+
+a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input[type="file"]::file-selector-button {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin-right: 12px;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: #e5e7eb;
+}
+</style>
+{% endblock %}

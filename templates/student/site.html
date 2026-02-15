@@ -1,0 +1,115 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h2 class="welcome-title">Welcome to Your Student Dashboard!</h2>
+        <p class="welcome-subtitle">Access all your academic resources and tools from here.</p>
+    </div>
+
+    <!-- Main Dashboard Cards -->
+    <div class="row g-4">
+        <!-- Homework Section Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon red">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                </div>
+                <h5 class="feature-title">Homework</h5>
+                <p class="feature-description">Download assignments and upload your completed work.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('student.homework') }}" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Download Questions
+                    </a>
+                    <a href="{{ url_for('student.homework') }}" class="btn btn-success">
+                        <i class="bi bi-upload"></i> Upload Answers
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doubts Section Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon orange">
+                    <i class="bi bi-question-circle-fill"></i>
+                </div>
+                <h5 class="feature-title">Ask Doubts</h5>
+                <p class="feature-description">Post your academic questions for teachers to answer.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('student.doubts') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Post New Doubt
+                    </a>
+                    <a href="{{ url_for('student.doubts') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-chat-dots"></i> My Doubts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Section Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon blue">
+                    <i class="bi bi-chat-square-text-fill"></i>
+                </div>
+                <h5 class="feature-title">Anonymous Feedback</h5>
+                <p class="feature-description">Share your thoughts and suggestions anonymously with admin.</p>
+                <a href="{{ url_for('student.feedback') }}" class="btn btn-primary">
+                    <i class="bi bi-pencil-square"></i> Submit Feedback
+                </a>
+            </div>
+        </div>
+
+        <!-- Announcements Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon blue">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+                <h5 class="feature-title">Announcements</h5>
+                <p class="feature-description">View important announcements from teachers and administration.</p>
+                <a href="{{ url_for('student.announcements') }}" class="btn btn-primary">
+                    <i class="bi bi-bell"></i> View Announcements
+                </a>
+            </div>
+        </div>
+
+        <!-- Classes Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon green">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <h5 class="feature-title">My Classes</h5>
+                <p class="feature-description">View your enrolled classes and their schedules.</p>
+                <a href="{{ url_for('student.classes') }}" class="btn btn-primary">
+                    <i class="bi bi-book"></i> View Classes
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon blue">
+                    <i class="bi bi-lightning-fill"></i>
+                </div>
+                <h5 class="feature-title">Quick Actions</h5>
+                <p class="feature-description">Access frequently used features quickly.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('student.homework') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-download"></i> Get Homework
+                    </a>
+                    <a href="{{ url_for('student.doubts') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-question-circle"></i> Ask Question
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

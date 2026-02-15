@@ -1,0 +1,308 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Homework - Student Portal{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-title">
+        <i class="bi bi-clipboard-check"></i>
+        <span>Homework Assignments</span>
+    </div>
+    <p class="page-subtitle">View and submit your homework assignments from all your enrolled classes.</p>
+    
+    <!-- Filter Section -->
+    <div class="filter-section mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <select class="form-select" id="classFilter">
+                    <option value="">All Classes</option>
+                    {% for class_info in student_classes %}
+                    <option value="{{ class_info[0] }}">{{ class_info[1] }} (Grade {{ class_info[2] }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Assignments</option>
+                    <option value="pending">Pending</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="submitted">Submitted</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Assignments Section -->
+    {% if homework_assignments %}
+        <div class="assignments-grid">
+            {% for assignment in homework_assignments %}
+            <div class="homework-card {% if assignment.is_overdue %}overdue{% endif %}" data-class-id="{{ assignment.class_id }}" data-status="{% if assignment.is_overdue %}overdue{% else %}pending{% endif %}">
+                <div class="homework-header">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="homework-title mb-0">{{ assignment.title }}</h5>
+                        <div class="assignment-badges">
+                            {% if assignment.is_overdue %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue
+                            </span>
+                            {% elif assignment.days_until_due is not none and assignment.days_until_due <= 1 %}
+                            <span class="badge bg-warning">
+                                <i class="bi bi-clock-fill me-1"></i>Due Soon
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ assignment.assignment_type|title }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="homework-meta mb-3">
+                        <div class="row text-muted small">
+                            <div class="col-md-6">
+                                <i class="bi bi-book me-1"></i>{{ assignment.class_name }}
+                                {% if assignment.subject_name %}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-tags me-1"></i>{{ assignment.subject_name }}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <i class="bi bi-person me-1"></i>{{ assignment.teacher_name }}
+                                {% if assignment.points %}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-star me-1"></i>{{ assignment.points }} points
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="homework-content">
+                    {% if assignment.description %}
+                    <div class="assignment-description mb-3">
+                        <p class="mb-0">{{ assignment.description|safe }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Due Date Information -->
+                    <div class="due-date-info mb-3">
+                        {% if assignment.due_date %}
+                        <div class="d-flex align-items-center {% if assignment.is_overdue %}text-danger{% elif assignment.days_until_due is not none and assignment.days_until_due <= 1 %}text-warning{% endif %}">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <strong>Due: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}</strong>
+                            {% if assignment.days_until_due is not none %}
+                                {% if assignment.is_overdue %}
+                                    <span class="ms-2">({{ (assignment.days_until_due * -1) }} days overdue)</span>
+                                {% elif assignment.days_until_due == 0 %}
+                                    <span class="ms-2 text-warning">(Due today!)</span>
+                                {% elif assignment.days_until_due == 1 %}
+                                    <span class="ms-2 text-warning">(Due tomorrow)</span>
+                                {% else %}
+                                    <span class="ms-2">({{ assignment.days_until_due }} days remaining)</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="d-flex align-items-center text-muted">
+                            <i class="bi bi-calendar-x me-2"></i>
+                            <span>No due date specified</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="homework-actions">
+                        <div class="row g-2">
+                            {% if assignment.file_path and assignment.original_filename %}
+                            <div class="col-md-6">
+                                <a href="{{ url_for('student.download_assignment', assignment_id=assignment.id) }}" 
+                                   class="btn btn-outline-primary btn-sm w-100">
+                                    <i class="bi bi-download me-1"></i>Download Assignment
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-md-6">
+                                <button type="button" 
+                                        class="btn btn-primary btn-sm w-100" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#submitModal" 
+                                        data-assignment-id="{{ assignment.id }}" 
+                                        data-assignment-title="{{ assignment.title }}"
+                                        data-class-name="{{ assignment.class_name }}">
+                                    <i class="bi bi-upload me-1"></i>Submit Work
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- No Homework Available -->
+        <div class="empty-state-dashed">
+            <div class="empty-state-icon large">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <h5 class="empty-state-title">No Homework Assignments</h5>
+            <p class="empty-state-text muted">
+                {% if student_classes %}
+                    You don't have any homework assignments at the moment. Check back later for new assignments from your teachers.
+                {% else %}
+                    You are not enrolled in any classes yet. Contact your administrator to get enrolled in classes.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Submission Modal -->
+<div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submitModalLabel">
+                    <i class="bi bi-upload me-2"></i>Submit Assignment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="submissionForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="assignment-info mb-3">
+                        <h6 class="mb-1" id="modalAssignmentTitle"></h6>
+                        <small class="text-muted" id="modalClassName"></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="submissionFile" class="form-label">Select File to Submit *</label>
+                        <input type="file" class="form-control" id="submissionFile" name="submission_file" required>
+                        <div class="form-text">
+                            Allowed formats: PDF, DOC, DOCX, TXT, ZIP, RAR, PNG, JPG, JPEG (Max 10MB)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="submissionComment" class="form-label">Comments (Optional)</label>
+                        <textarea class="form-control" id="submissionComment" name="comment" rows="3" 
+                                  placeholder="Add any comments about your submission..."></textarea>
+                    </div>
+                    
+                    <input type="hidden" id="modalAssignmentId" name="assignment_id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i>Submit Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Alerts -->
+<div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1060;"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const classFilter = document.getElementById('classFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const homeworkCards = document.querySelectorAll('.homework-card');
+    
+    function applyFilters() {
+        const selectedClass = classFilter.value;
+        const selectedStatus = statusFilter.value;
+        
+        homeworkCards.forEach(card => {
+            let showCard = true;
+            
+            if (selectedClass && card.dataset.classId !== selectedClass) {
+                showCard = false;
+            }
+            
+            if (selectedStatus && card.dataset.status !== selectedStatus) {
+                showCard = false;
+            }
+            
+            card.style.display = showCard ? 'block' : 'none';
+        });
+    }
+    
+    classFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    
+    // Modal functionality
+    const submitModal = document.getElementById('submitModal');
+    const submissionForm = document.getElementById('submissionForm');
+    
+    submitModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const assignmentId = button.getAttribute('data-assignment-id');
+        const assignmentTitle = button.getAttribute('data-assignment-title');
+        const className = button.getAttribute('data-class-name');
+        
+        document.getElementById('modalAssignmentId').value = assignmentId;
+        document.getElementById('modalAssignmentTitle').textContent = assignmentTitle;
+        document.getElementById('modalClassName').textContent = className;
+    });
+    
+    // Form submission
+    submissionForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i>Submitting...';
+        
+        fetch('{{ url_for("student.upload_submission") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                submitModal.querySelector('.btn-close').click();
+                submissionForm.reset();
+            } else {
+                showAlert('danger', data.message || 'Failed to submit assignment');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'An error occurred while submitting the assignment');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    });
+    
+    function showAlert(type, message) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        alertContainer.appendChild(alert);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

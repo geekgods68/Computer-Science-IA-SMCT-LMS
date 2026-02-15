@@ -1,0 +1,359 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Manage Users</div>
+    </div>
+    <a href="{{ url_for('admin.users') }}" style="background-color: #10b981; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+        ➕ Add New User
+    </a>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
+            <div style="background-color: #fee2e2; border: 1px solid #f87171; border-radius: 8px; padding: 16px; margin-bottom: 16px; color: #dc2626;">
+            {% else %}
+            <div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin-bottom: 16px; color: #065f46;">
+            {% endif %}
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Search and Filter Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    🔍 Filter Users
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Filter by Role</label>
+            <select id="roleFilter" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Search by Username</label>
+            <input type="text" id="searchUser" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Type username to search...">
+        </div>
+    </div>
+</div>
+
+<!-- Users Table Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    👥 All Users ({{ users|length }} total)
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;" id="usersTable">
+        <thead>
+            <tr style="background-color: #374151; color: white;">
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">ID</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Username</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Role</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Created On</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr style="border-bottom: 1px solid #e5e7eb; {{ 'background-color: #f8f9fa;' if loop.index % 2 == 1 }}" data-role="{{ user[3] or 'No Role' }}" data-username="{{ user[1].lower() }}">
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ user[0] }}</td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb; display: flex; align-items: center; gap: 8px;">
+                    {{ user[1] }}
+                    {% if user[0] == current_user.id %}
+                        <span style="background-color: #06b6d4; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">You</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                    {% if user[3] == 'admin' %}
+                        <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Admin</span>
+                    {% elif user[3] == 'teacher' %}
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Teacher</span>
+                    {% elif user[3] == 'student' %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Student</span>
+                    {% else %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">No Role</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if user[2] %}
+                        {{ user[2].split(' ')[0] }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td style="padding: 16px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="viewUser({{ user[0] }}, '{{ user[1] }}', '{{ user[3] or 'No Role' }}')" style="background-color: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            👁️ View
+                        </button>
+                        {% if user[3] == 'teacher' %}
+                        <a href="{{ url_for('admin.edit_teacher', teacher_id=user[0]) }}" style="background-color: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none;">
+                            ✏️ Edit Teacher
+                        </a>
+                        {% elif user[3] == 'student' %}
+                        <a href="{{ url_for('admin.edit_student', student_id=user[0]) }}" style="background-color: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none;">
+                            ✏️ Edit Student
+                        </a>
+                        {% endif %}
+                        {% if user[0] != current_user.id %}
+                        <button onclick="confirmDelete({{ user[0] }}, '{{ user[1] }}')" style="background-color: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            🗑️ Delete
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; border-radius: 8px; padding: 24px; min-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 600; color: #dc2626; margin: 0; display: flex; align-items: center; gap: 8px;">
+                ⚠️ Confirm User Deletion
+            </h3>
+        </div>
+        <div style="margin-bottom: 24px; color: #374151;">
+            <p>Are you sure you want to delete the user <strong id="deleteUsername"></strong>?</p>
+            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 12px; margin-top: 12px;">
+                <p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 500;">Warning: This action cannot be undone!</p>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #991b1b;">This will:</p>
+                <ul style="margin: 8px 0 0 0; font-size: 14px; color: #991b1b; padding-left: 20px;">
+                    <li>Remove the user account permanently</li>
+                    <li>Remove all role assignments</li>
+                    <li>Remove class assignments (for students)</li>
+                    <li>Keep historical data (doubts, announcements) but mark as deleted user</li>
+                </ul>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="closeDeleteModal()" style="background-color: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                Cancel
+            </button>
+            <form id="deleteUserForm" method="POST" action="" style="display: inline;">
+                <button type="submit" style="background-color: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                    🗑️ Delete User
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="userDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; border-radius: 8px; padding: 24px; min-width: 500px; max-width: 80%; max-height: 80%; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 600; color: #3b82f6; margin: 0; display: flex; align-items: center; gap: 8px;">
+                👤 User Details
+            </h3>
+        </div>
+        <div id="userDetailsContent">
+            <div style="text-align: center; color: #6b7280;">Loading...</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+            <button onclick="closeUserDetailsModal()" style="background-color: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleFilter = document.getElementById('roleFilter');
+    const searchUser = document.getElementById('searchUser');
+    const table = document.getElementById('usersTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    function filterTable() {
+        const roleValue = roleFilter.value.toLowerCase();
+        const searchValue = searchUser.value.toLowerCase();
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const role = row.getAttribute('data-role').toLowerCase();
+            const username = row.getAttribute('data-username');
+            
+            const roleMatch = roleValue === '' || role.includes(roleValue);
+            const searchMatch = searchValue === '' || username.includes(searchValue);
+            
+            if (roleMatch && searchMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+
+    roleFilter.addEventListener('change', filterTable);
+    searchUser.addEventListener('input', filterTable);
+
+    // Add focus styles for form elements
+    const inputs = document.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+
+// Modal functions
+function confirmDelete(userId, username) {
+    document.getElementById('deleteUserForm').action = `/admin/delete_user/${userId}`;
+    document.getElementById('deleteUsername').textContent = username;
+    document.getElementById('deleteUserModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteUserModal').style.display = 'none';
+}
+
+function viewUser(userId, username, role) {
+    document.getElementById('userDetailsContent').innerHTML = '<div style="text-align: center; color: #6b7280;">Loading...</div>';
+    document.getElementById('userDetailsModal').style.display = 'block';
+    
+    // Fetch detailed user information
+    fetch(`/admin/get_user_details/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('userDetailsContent').innerHTML = `<div style="background-color: #fee2e2; border: 1px solid #f87171; border-radius: 8px; padding: 16px; color: #dc2626;">${data.error}</div>`;
+                return;
+            }
+            
+            let content = `
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                    <h6 style="color: #3b82f6; margin: 0 0 12px 0;">Basic Information</h6>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div><strong>ID:</strong> ${userId}</div>
+                        <div><strong>Username:</strong> ${data.username}</div>
+                        <div><strong>Role:</strong> ${data.role || 'No Role'}</div>
+                        <div><strong>Name:</strong> ${data.name || 'Not provided'}</div>
+                        <div><strong>Email:</strong> ${data.email || 'Not provided'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Add role-specific information for students and teachers
+            if (data.role === 'student' || data.role === 'teacher') {
+                content += `
+                    <div style="background-color: #f0f9ff; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <h6 style="color: #0891b2; margin: 0 0 12px 0;">${data.role === 'student' ? 'Student' : 'Teacher'} Information</h6>
+                        
+                        <!-- Subjects Section -->
+                        <div style="margin-bottom: 16px;">
+                            <h6 style="color: #9f7aea; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">📚 ${data.role === 'student' ? 'Subject Interests' : 'Teaching Subjects'}</h6>
+                            ${data.subjects && data.subjects.length > 0 ? 
+                                `<div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    ${data.subjects.map(subject => 
+                                        `<span style="background: #9f7aea; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">${subject}</span>`
+                                    ).join('')}
+                                </div>` : 
+                                `<p style="color: #6b7280; margin: 0; font-style: italic;">No subjects ${data.role === 'student' ? 'selected' : 'assigned'}</p>`
+                            }
+                        </div>
+                        
+                        <!-- Classes Section -->
+                        <div>
+                            <h6 style="color: #4299e1; margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">🏫 ${data.role === 'student' ? 'Enrolled Classes' : 'Teaching Classes'}</h6>
+                            ${data.classes && data.classes.length > 0 ? 
+                                `<div style="display: flex; flex-direction: column; gap: 6px;">
+                                    ${data.classes.map(classInfo => 
+                                        `<div style="background: #ebf8ff; border: 1px solid #4299e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; color: #1e40af;">
+                                            <i class="bi bi-mortarboard" style="margin-right: 6px;"></i>${classInfo}
+                                        </div>`
+                                    ).join('')}
+                                </div>` : 
+                                `<p style="color: #6b7280; margin: 0; font-style: italic;">No classes ${data.role === 'student' ? 'enrolled' : 'assigned'}</p>`
+                            }
+                        </div>
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px;">
+                        <h6 style="color: #6b7280; margin: 0 0 8px 0;">Additional Information</h6>
+                        <p style="color: #9ca3af; margin: 0;">No additional role-specific information available.</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('userDetailsContent').innerHTML = content;
+        })
+        .catch(error => {
+            document.getElementById('userDetailsContent').innerHTML = `<div style="background-color: #fee2e2; border: 1px solid #f87171; border-radius: 8px; padding: 16px; color: #dc2626;">Error loading user details: ${error.message}</div>`;
+        });
+}
+
+function closeUserDetailsModal() {
+    document.getElementById('userDetailsModal').style.display = 'none';
+}
+
+function editUser(userId, username, role) {
+    if (role.toLowerCase() === 'teacher') {
+        window.location.href = `/admin/edit_teacher/${userId}`;
+    } else if (role.toLowerCase() === 'student') {
+        window.location.href = `/admin/edit_student/${userId}`;
+    } else {
+        alert('Edit functionality not available for this user role.');
+    }
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const deleteModal = document.getElementById('deleteUserModal');
+    const detailsModal = document.getElementById('userDetailsModal');
+    
+    if (event.target == deleteModal) {
+        closeDeleteModal();
+    }
+    if (event.target == detailsModal) {
+        closeUserDetailsModal();
+    }
+}
+</script>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input::placeholder {
+    color: #9ca3af;
+}
+
+select:invalid {
+    color: #9ca3af;
+}
+
+select option {
+    color: #374151;
+}
+
+table tr:hover {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

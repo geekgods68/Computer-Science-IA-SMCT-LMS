@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework & Assignments - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}"><i class="bi bi-person-workspace"></i> Teacher Portal</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h2 class="card-title text-danger">
+                            <i class="bi bi-file-earmark-pdf"></i> Homework & Assignments
+                        </h2>
+                        <p class="card-text">Upload new assignments and manage homework for your classes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-upload text-danger" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Upload New Assignment</h5>
+                        <p class="card-text">Create and upload homework for your classes</p>
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#uploadAssignmentModal">
+                            <i class="bi bi-plus-circle"></i> Upload Assignment
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-eye text-primary" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Manage Assignments</h5>
+                        <p class="card-text">View, edit, and manage existing assignments</p>
+                        <button class="btn btn-primary" onclick="showAssignmentsList()">
+                            <i class="bi bi-list"></i> View All Assignments
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Assignments -->
+        <div class="row mb-4" id="assignmentsList">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Current Assignments</h5>
+                        <div>
+                            <select class="form-select form-select-sm" id="classFilter" style="width: auto; display: inline-block;">
+                                <option value="">All Classes</option>
+                                {% if teacher_classes %}
+                                    {% for class in teacher_classes %}
+                                        <option value="{{ class[0] }}">{{ class[1] }}{% if class[2] %} - Grade {{ class[2] }}{% endif %}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Assignment Title</th>
+                                        <th>Class</th>
+                                        <th>Upload Date</th>
+                                        <th>Due Date</th>
+                                        <th>Submissions</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if teacher_assignments %}
+                                        {% for assignment in teacher_assignments %}
+                                        <tr>
+                                            <td><strong>{{ assignment.title }}</strong></td>
+                                            <td>{{ assignment.class_name }}</td>
+                                            <td>{{ assignment.created_on.strftime('%b %d, %Y') if assignment.created_on else '-' }}</td>
+                                            <td>{{ assignment.due_date.strftime('%b %d, %Y') if assignment.due_date else '-' }}</td>
+                                            <td>
+                                                <span class="badge bg-success">{{ assignment.submission_count or 0 }}/{{ assignment.total_students or 0 }}</span>
+                                                <small class="text-muted">submitted</small>
+                                            </td>
+                                            <td>
+                                                {% if assignment.status == 'active' %}
+                                                    <span class="badge bg-warning">Active</span>
+                                                {% elif assignment.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ assignment.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-secondary edit-assignment-btn" title="Edit"
+                                                            data-assignment-id="{{ assignment.id }}"
+                                                            data-title="{{ assignment.title }}"
+                                                            data-description="{{ assignment.description }}"
+                                                            data-due-date="{{ assignment.due_date.strftime('%Y-%m-%dT%H:%M') if assignment.due_date else '' }}"
+                                                            data-points="{{ assignment.points }}"
+                                                            data-type="{{ assignment.assignment_type }}"
+                                                            data-filename="{{ assignment.original_filename or '' }}"
+                                                            data-allow-late="{{ assignment.allow_late_submission|lower }}">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <a href="{{ url_for('teacher.submissions') }}?assignment_id={{ assignment.id }}" class="btn btn-outline-success" title="View Submissions">
+                                                        <i class="bi bi-file-earmark-check"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted">No assignments created yet</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Analytics -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Assignment Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <h4>{{ assignment_stats.total or 0 }}</h4>
+                                        <p class="mb-0">Total Assignments</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body">
+                                        <h4>{{ assignment_stats.active or 0 }}</h4>
+                                        <p class="mb-0">Active</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <h4>{{ assignment_stats.completed or 0 }}</h4>
+                                        <p class="mb-0">Completed</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <h4>{{ assignment_stats.avg_submission_rate or 0 }}%</h4>
+                                        <p class="mb-0">Avg Submission Rate</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Assignment Modal -->
+    <div class="modal fade" id="uploadAssignmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-upload"></i> Upload New Assignment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="assignmentUploadForm" enctype="multipart/form-data" method="POST" action="{{ url_for('teacher.upload_assignment') }}">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="assignmentClass" class="form-label">Select Class</label>
+                                <select class="form-select" id="assignmentClass" name="class_id" required>
+                                    <option value="">Choose class...</option>
+                                    {% for class in teacher_classes %}
+                                    <option value="{{ class[0] }}">{{ class[1] }}{% if class[2] %} - Grade {{ class[2] }}{% endif %}</option>
+                                    {% endfor %}
+                                    {% if not teacher_classes %}
+                                    <option value="" disabled>No classes assigned</option>
+                                    {% endif %}
+                                </select>
+                                {% if not teacher_classes %}
+                                <div class="form-text text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> No classes have been assigned to you by the administrator.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="assignmentTitle" class="form-label">Assignment Title</label>
+                            <input type="text" class="form-control" id="assignmentTitle" name="title" placeholder="e.g., Chapter 5 Problem Set" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignmentDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="assignmentDescription" name="description" rows="4" placeholder="Describe the assignment, learning objectives, and any special instructions..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="assignmentDueDate" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="assignmentDueDate" name="due_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="assignmentPoints" class="form-label">Total Points</label>
+                                <input type="number" class="form-control" id="assignmentPoints" name="points" placeholder="100" min="1" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignmentFile" class="form-label">Assignment File</label>
+                            <input type="file" class="form-control" id="assignmentFile" name="assignment_file" accept=".pdf,.doc,.docx,.txt" required>
+                            <div class="form-text">Accepted formats: PDF, DOC, DOCX, TXT (Max 10MB)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="assignmentType" class="form-label">Assignment Type</label>
+                            <select class="form-select" id="assignmentType" name="assignment_type" required>
+                                <option value="">Select type...</option>
+                                <option value="homework">Homework</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="project">Project</option>
+                                <option value="lab">Lab Report</option>
+                                <option value="exam">Exam</option>
+                            </select>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="allowLateSubmission" name="allow_late_submission">
+                            <label class="form-check-label" for="allowLateSubmission">
+                                Allow late submissions (with penalty)
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="notifyStudents" name="notify_students" checked>
+                            <label class="form-check-label" for="notifyStudents">
+                                Send notification to students
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="uploadAssignmentBtn">
+                        <i class="bi bi-upload"></i> Upload Assignment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Assignment Modal -->
+    <div class="modal fade" id="editAssignmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Assignment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editAssignmentForm" enctype="multipart/form-data">
+                        <input type="hidden" id="editAssignmentId" name="assignment_id">
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="editAssignmentClass" class="form-label">Class</label>
+                                <select class="form-select" id="editAssignmentClass" name="class_id" required>
+                                    <option value="">Choose class...</option>
+                                    {% for class in teacher_classes %}
+                                    <option value="{{ class[0] }}">{{ class[1] }}{% if class[2] %} - Grade {{ class[2] }}{% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editAssignmentTitle" class="form-label">Assignment Title</label>
+                            <input type="text" class="form-control" id="editAssignmentTitle" name="title" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editAssignmentDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editAssignmentDescription" name="description" rows="4"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editAssignmentDueDate" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="editAssignmentDueDate" name="due_date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editAssignmentPoints" class="form-label">Total Points</label>
+                                <input type="number" class="form-control" id="editAssignmentPoints" name="points" min="1" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editAssignmentType" class="form-label">Assignment Type</label>
+                            <select class="form-select" id="editAssignmentType" name="assignment_type" required>
+                                <option value="">Select type...</option>
+                                <option value="homework">Homework</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="project">Project</option>
+                                <option value="lab">Lab Report</option>
+                                <option value="exam">Exam</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editAssignmentFile" class="form-label">Replace Assignment File (optional)</label>
+                            <input type="file" class="form-control" id="editAssignmentFile" name="assignment_file" accept=".pdf,.doc,.docx,.txt">
+                            <div class="form-text">Leave empty to keep current file. Accepted formats: PDF, DOC, DOCX, TXT (Max 10MB)</div>
+                            <div id="currentFileName" class="form-text text-info"></div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="editAllowLateSubmission" name="allow_late_submission">
+                            <label class="form-check-label" for="editAllowLateSubmission">
+                                Allow late submissions (with penalty)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateAssignmentBtn">
+                        <i class="bi bi-check"></i> Update Assignment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showAssignmentsList() {
+            document.getElementById('assignmentsList').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Class filter functionality
+        document.getElementById('classFilter').addEventListener('change', function() {
+            const selectedClassId = this.value;
+            const tableRows = document.querySelectorAll('#assignmentsList tbody tr');
+            
+            console.log('Filtering by class ID:', selectedClassId);
+            
+            tableRows.forEach(row => {
+                if (selectedClassId === '') {
+                    // Show all rows
+                    row.style.display = '';
+                } else {
+                    // Check if this row belongs to the selected class
+                    const classCell = row.querySelector('td:nth-child(2)'); // Class name column
+                    const className = classCell ? classCell.textContent.trim() : '';
+                    
+                    // Find the option text for the selected class ID
+                    const selectedOption = this.querySelector(`option[value="${selectedClassId}"]`);
+                    const selectedClassName = selectedOption ? selectedOption.textContent.trim() : '';
+                    
+                    console.log('Row class name:', className, 'Selected class name:', selectedClassName);
+                    
+                    if (className === selectedClassName) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        // Debug and validate dropdowns on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const classDropdown = document.getElementById('assignmentClass');
+            
+            console.log('=== Homework Dropdowns Debug ===');
+            console.log('Class dropdown found:', !!classDropdown);
+            
+            if (classDropdown) {
+                console.log('Class options count:', classDropdown.options.length);
+                for (let i = 0; i < classDropdown.options.length; i++) {
+                    console.log(`Class option ${i}:`, classDropdown.options[i].value, '-', classDropdown.options[i].text);
+                }
+            }
+            
+            // If dropdowns are empty when they shouldn't be, show an alert
+            if (classDropdown && classDropdown.options.length <= 1) {
+                console.warn('⚠ Classes dropdown appears to be empty!');
+                alert('Notice: Classes dropdown appears to be empty. Please check your class assignments or contact the administrator.');
+            }
+        });
+
+        // Additional validation when modal is shown
+        document.getElementById('uploadAssignmentModal').addEventListener('shown.bs.modal', function() {
+            const classDropdown = document.getElementById('assignmentClass');
+            
+            console.log('Modal opened - validating dropdowns...');
+            
+            if (classDropdown && classDropdown.options.length <= 1) {
+                console.error('Classes dropdown is empty when modal opened');
+            }
+        });
+
+        // Handle Upload Assignment button click
+        document.getElementById('uploadAssignmentBtn').addEventListener('click', function() {
+            const form = document.getElementById('assignmentUploadForm');
+            const formData = new FormData(form);
+            const button = this;
+            
+            // Show loading state
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Uploading...';
+            button.disabled = true;
+            
+            // Reset previous validation states
+            form.classList.remove('was-validated');
+            const inputs = form.querySelectorAll('.form-control, .form-select');
+            inputs.forEach(input => {
+                input.classList.remove('is-invalid', 'is-valid');
+                const feedback = input.parentNode.querySelector('.invalid-feedback, .valid-feedback');
+                if (feedback) feedback.remove();
+            });
+            
+            // Validate form
+            let isValid = true;
+            const requiredFields = [
+                { element: document.getElementById('assignmentClass'), message: 'Please select a class' },
+                { element: document.getElementById('assignmentTitle'), message: 'Please enter assignment title' },
+                { element: document.getElementById('assignmentDueDate'), message: 'Please select due date' },
+                { element: document.getElementById('assignmentPoints'), message: 'Please enter total points' },
+                { element: document.getElementById('assignmentType'), message: 'Please select assignment type' },
+                { element: document.getElementById('assignmentFile'), message: 'Please select a file' }
+            ];
+            
+            requiredFields.forEach(field => {
+                if (!field.element.value || field.element.value.trim() === '') {
+                    field.element.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = field.message;
+                    field.element.parentNode.appendChild(feedback);
+                    isValid = false;
+                } else {
+                    field.element.classList.add('is-valid');
+                }
+            });
+            
+            // Validate file type
+            const fileInput = document.getElementById('assignmentFile');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+                const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                
+                if (!allowedExtensions.includes(fileExtension)) {
+                    fileInput.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Please upload only PDF, DOC, DOCX, or TXT files';
+                    fileInput.parentNode.appendChild(feedback);
+                    isValid = false;
+                } else if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                    fileInput.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'File size must be less than 10MB';
+                    fileInput.parentNode.appendChild(feedback);
+                    isValid = false;
+                }
+            }
+            
+            // Validate due date is in the future
+            const dueDateInput = document.getElementById('assignmentDueDate');
+            if (dueDateInput.value) {
+                const dueDate = new Date(dueDateInput.value);
+                const now = new Date();
+                if (dueDate <= now) {
+                    dueDateInput.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Due date must be in the future';
+                    dueDateInput.parentNode.appendChild(feedback);
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
+            
+            // Submit form via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-check-circle me-2"></i>
+                        Assignment uploaded successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('uploadAssignmentModal'));
+                    modal.hide();
+                    
+                    // Reset form
+                    form.reset();
+                    form.classList.remove('was-validated');
+                    inputs.forEach(input => input.classList.remove('is-valid', 'is-invalid'));
+                    
+                    // Refresh the page after a short delay to show new assignment
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    // Show error message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error: ${data.message || 'Failed to upload assignment'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading assignment:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    An error occurred while uploading the assignment. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Edit Assignment functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-assignment-btn')) {
+                const btn = e.target.closest('.edit-assignment-btn');
+                
+                // Get assignment data from attributes
+                const assignmentData = {
+                    id: btn.getAttribute('data-assignment-id'),
+                    title: btn.getAttribute('data-title'),
+                    description: btn.getAttribute('data-description'),
+                    dueDate: btn.getAttribute('data-due-date'),
+                    points: btn.getAttribute('data-points'),
+                    type: btn.getAttribute('data-type'),
+                    filename: btn.getAttribute('data-filename'),
+                    allowLate: btn.getAttribute('data-allow-late') === 'true'
+                };
+                
+                // Populate edit form
+                document.getElementById('editAssignmentId').value = assignmentData.id;
+                document.getElementById('editAssignmentTitle').value = assignmentData.title;
+                document.getElementById('editAssignmentDescription').value = assignmentData.description;
+                document.getElementById('editAssignmentDueDate').value = assignmentData.dueDate;
+                document.getElementById('editAssignmentPoints').value = assignmentData.points;
+                document.getElementById('editAssignmentType').value = assignmentData.type;
+                document.getElementById('editAllowLateSubmission').checked = assignmentData.allowLate;
+                
+                // Show current filename if exists
+                const currentFileDiv = document.getElementById('currentFileName');
+                if (assignmentData.filename) {
+                    currentFileDiv.textContent = `Current file: ${assignmentData.filename}`;
+                } else {
+                    currentFileDiv.textContent = 'No file attached';
+                }
+                
+                // Show edit modal
+                const editModal = new bootstrap.Modal(document.getElementById('editAssignmentModal'));
+                editModal.show();
+            }
+        });
+
+        // Handle Update Assignment button click
+        document.getElementById('updateAssignmentBtn').addEventListener('click', function() {
+            const form = document.getElementById('editAssignmentForm');
+            const formData = new FormData(form);
+            const button = this;
+            
+            // Show loading state
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Updating...';
+            button.disabled = true;
+            
+            // Submit form via AJAX
+            fetch('{{ url_for("teacher.edit_assignment") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-check-circle me-2"></i>
+                        Assignment updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAssignmentModal'));
+                    modal.hide();
+                    
+                    // Refresh the page after a short delay to show updated assignment
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    // Show error message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error: ${data.message || 'Failed to update assignment'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+                }
+            })
+            .catch(error => {
+                console.error('Error updating assignment:', error);
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    An error occurred while updating the assignment. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+            })
+            .finally(() => {
+                // Reset button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Announcements - Student Portal{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-title">
+        <i class="bi bi-megaphone"></i>
+        <span>Announcements</span>
+    </div>
+    <p class="page-subtitle">Stay updated with the latest news and announcements from your school.</p>
+    
+    {% if announcements %}
+        {% for announcement in announcements %}
+        <div class="announcement-card">
+            <div class="announcement-meta mb-3">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-1 fw-bold">{{ announcement.title }}</h5>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>{{ announcement.created_at }}
+                            {% if announcement.teacher_name %}
+                            <span class="mx-2">|</span>
+                            <i class="bi bi-person me-1"></i>{{ announcement.teacher_name }}
+                            {% endif %}
+                            {% if announcement.class_name %}
+                            <span class="mx-2">|</span>
+                            <i class="bi bi-people me-1"></i>{{ announcement.class_name }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% if announcement.priority == 'high' %}
+                    <div class="col-auto">
+                        <span class="badge bg-danger">
+                            <i class="bi bi-exclamation-triangle me-1"></i>High Priority
+                        </span>
+                    </div>
+                    {% elif announcement.priority == 'medium' %}
+                    <div class="col-auto">
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-exclamation-circle me-1"></i>Medium Priority
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="announcement-content">
+                {{ announcement.content }}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state-dashed">
+            <div class="empty-state-icon large">
+                <i class="bi bi-megaphone-fill"></i>
+            </div>
+            <h5 class="empty-state-title">No Announcements Available</h5>
+            <p class="empty-state-text muted">
+                Check back later for new announcements and updates.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

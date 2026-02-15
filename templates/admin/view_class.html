@@ -1,0 +1,195 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="welcome-text">Welcome, admin!</div>
+<div class="page-title">Class Details: {{ class_info[1] if class_info else 'Unknown Class' }}</div>
+
+<!-- Class Information -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Class Information</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div>
+            <strong style="color: #6b7280;">Class Name:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[1] if class_info else 'N/A' }}</div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">Type:</strong>
+            <div style="margin-top: 4px;">
+                <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[2] if class_info and class_info[2] else 'regular' }}</span>
+            </div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">Subject:</strong>
+            <div style="margin-top: 4px;">
+                {% if class_info[17] %}
+                    {% if class_info[17] == 'Math' %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% elif class_info[17] == 'English' %}
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% elif class_info[17] == 'Science' %}
+                        <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% elif class_info[17] == 'Hindi' %}
+                        <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% elif class_info[17] == 'Social Science' %}
+                        <span style="background-color: #8b5cf6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% else %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class_info[17] }}</span>
+                    {% endif %}
+                {% else %}
+                    <span style="color: #374151;">Not set</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">Grade Level:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[4] if class_info and class_info[4] else 'N/A' }}</div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">Maximum Students:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[11] if class_info and class_info[11] else '30' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Class Timings -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Class Timings</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+        <div>
+            <strong style="color: #6b7280;">Start Time:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[7] if class_info and class_info[7] else 'Not set' }}</div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">End Time:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[8] if class_info and class_info[8] else 'Not set' }}</div>
+        </div>
+        <div>
+            <strong style="color: #6b7280;">Days:</strong>
+            <div style="margin-top: 4px; color: #374151;">{{ class_info[6] if class_info and class_info[6] else 'Not set' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Schedule -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Weekly Class Schedule</h3>
+    {% if class_info and class_info[6] %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% set days = class_info[6].split(',') if class_info[6] else [] %}
+            {% for day in days %}
+                <span style="background-color: #10b981; color: white; padding: 6px 12px; border-radius: 16px; font-size: 14px;">{{ day.strip() }}</span>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; color: #991b1b;">
+            <i class="bi bi-info-circle" style="margin-right: 8px;"></i>
+            No schedule days have been set for this class.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Assigned Teachers -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Assigned Teachers</h3>
+    
+    {% if teachers %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">ID</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Username</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in teachers %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px; color: #374151; border-right: 1px solid #e5e7eb;">{{ teacher[0] }}</td>
+                    <td style="padding: 12px; color: #374151; border-right: 1px solid #e5e7eb;">{{ teacher[1] }}</td>
+                    <td style="padding: 12px; color: #374151;">
+                        <span style="background-color: #8b5cf6; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">Active</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; color: #991b1b;">
+        <i class="bi bi-info-circle" style="margin-right: 8px;"></i>
+        No teachers are currently assigned to this class.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Subjects -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Subjects Taught in This Class</h3>
+    {% if subjects %}
+    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        {% for subject in subjects %}
+        <span style="background-color: #10b981; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;">{{ subject.name }}</span>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; color: #991b1b;">
+        <i class="bi bi-info-circle" style="margin-right: 8px;"></i>
+        No subjects are currently taught in this class. Subjects are determined by the students and teachers assigned to this class.
+    </div>
+    {% endif %}
+</div>
+</div>
+
+<!-- Students Assigned -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: #374151; font-size: 20px; font-weight: 600;">Students Assigned ({{ students|length }}/{{ class_info[11] if class_info and class_info[11] else '30' }})</h3>
+    
+    {% if students %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">ID</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Username</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px; color: #374151; border-right: 1px solid #e5e7eb;">{{ student[0] }}</td>
+                    <td style="padding: 12px; color: #374151; border-right: 1px solid #e5e7eb;">{{ student[1] }}</td>
+                    <td style="padding: 12px; color: #374151;">
+                        <span style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">Active</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; color: #991b1b;">
+        <i class="bi bi-info-circle" style="margin-right: 8px;"></i>
+        No students are currently assigned to this class.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Back Button -->
+<div style="margin-top: 32px;">
+    <a href="{{ url_for('admin.view_classes') }}" style="background-color: #6b7280; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 16px;">
+        ← Back to Classes
+    </a>
+</div>
+
+<style>
+a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+table tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

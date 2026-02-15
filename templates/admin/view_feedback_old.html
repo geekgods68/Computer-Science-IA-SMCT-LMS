@@ -1,0 +1,358 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Student Feedback</h2>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-funnel"></i> Filter by Status
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('admin.view_feedback') }}">All Feedback</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.view_feedback', status='pending') }}">Pending</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.view_feedback', status='reviewed') }}">Reviewed</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.view_feedback', status='resolved') }}">Resolved</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="row mb-3">
+            <div class="col-12">
+                {% for category, message in messages %}
+                    {% if category == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle"></i> {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <i class="bi bi-chat-square-text" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">{{ feedback_stats.total }}</h4>
+                <p class="mb-0">Total Feedback</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-warning text-white">
+            <div class="card-body">
+                <i class="bi bi-clock" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">{{ feedback_stats.pending }}</h4>
+                <p class="mb-0">Pending Review</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <i class="bi bi-eye" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">{{ feedback_stats.reviewed }}</h4>
+                <p class="mb-0">Reviewed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center bg-success text-white">
+            <div class="card-body">
+                <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                <h4 class="mt-2">{{ feedback_stats.resolved }}</h4>
+                <p class="mb-0">Resolved</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="categoryFilter" class="form-label">Category</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="">All Categories</option>
+                    <option value="class">Class/Course</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="schedule">Schedule</option>
+                    <option value="facility">Facilities</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="ratingFilter" class="form-label">Rating</label>
+                <select id="ratingFilter" class="form-select">
+                    <option value="">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="dateFilter" class="form-label">Date Range</label>
+                <select id="dateFilter" class="form-select">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="searchFeedback" class="form-label">Search</label>
+                <input type="text" id="searchFeedback" class="form-control" placeholder="Search feedback...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback List -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Feedback Submissions ({{ feedback_list|length }} total)</h5>
+    </div>
+    <div class="card-body">
+        {% if feedback_list %}
+            {% for feedback in feedback_list %}
+            <div class="border-bottom mb-3 pb-3 feedback-item" 
+                 data-category="{{ feedback[2] }}" 
+                 data-rating="{{ feedback[6] or 'none' }}" 
+                 data-date="{{ feedback[9] }}"
+                 data-search="{{ (feedback[7] + ' ' + (feedback[3] or '') + ' ' + (feedback[4] or '') + ' ' + (feedback[5] or '') + ' ' + (feedback[6]|string if feedback[6] else '')).lower() }}">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3">
+                                {% if feedback[2] == 'teacher' %}
+                                    <i class="bi bi-person-workspace text-primary" style="font-size: 1.5rem;"></i>
+                                {% elif feedback[2] == 'class' %}
+                                    <i class="bi bi-journal-text text-success" style="font-size: 1.5rem;"></i>
+                                {% elif feedback[2] == 'schedule' %}
+                                    <i class="bi bi-calendar3 text-warning" style="font-size: 1.5rem;"></i>
+                                {% elif feedback[2] == 'facility' %}
+                                    <i class="bi bi-building text-info" style="font-size: 1.5rem;"></i>
+                                {% else %}
+                                    <i class="bi bi-chat-dots text-secondary" style="font-size: 1.5rem;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-2">
+                                    <span class="badge bg-primary me-2">{{ feedback[2].title() }}</span>
+                                    {% if feedback[8] == 1 %}
+                                        <span class="badge bg-secondary me-2">Anonymous</span>
+                                    {% else %}
+                                        <span class="badge bg-info me-2">{{ feedback[14] or 'Unknown User' }}</span>
+                                    {% endif %}
+                                    {% if feedback[6] %}
+                                        <span class="text-warning">
+                                            {% for i in range(feedback[6]) %}
+                                                <i class="bi bi-star-fill"></i>
+                                            {% endfor %}
+                                            {% for i in range(5 - feedback[6]) %}
+                                                <i class="bi bi-star"></i>
+                                            {% endfor %}
+                                        </span>
+                                    {% endif %}
+                                </h6>
+                                {% if feedback[3] or feedback[4] or feedback[5] %}
+                                <p class="text-muted small mb-2">
+                                    {% if feedback[3] %}<strong>Subject:</strong> {{ feedback[3] }} | {% endif %}
+                                    {% if feedback[4] %}<strong>Teacher:</strong> {{ feedback[4] }} | {% endif %}
+                                    {% if feedback[5] %}<strong>Class:</strong> {{ feedback[5] }} | {% endif %}
+                                    <strong>Submitted:</strong> {{ feedback[9].split(' ')[0] }}
+                                </p>
+                                {% endif %}
+                                <p class="mb-2">{{ feedback[7] }}</p>
+                                {% if feedback[11] %}
+                                <div class="mt-2 p-2 bg-light rounded">
+                                    <small class="text-success">
+                                        <i class="bi bi-reply"></i> <strong>Your Response:</strong> 
+                                        {{ feedback[11] }}
+                                    </small>
+                                    <br><small class="text-muted">Responded on {{ feedback[12].split(' ')[0] if feedback[12] else 'N/A' }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="mb-2">
+                            {% if feedback[10] == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif feedback[10] == 'reviewed' %}
+                                <span class="badge bg-info">Reviewed</span>
+                            {% elif feedback[10] == 'resolved' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% endif %}
+                        </div>
+                        <div class="btn-group-vertical btn-group-sm">
+                            {% if feedback[10] == 'pending' %}
+                            <button class="btn btn-outline-primary btn-sm" onclick="markAsReviewed({{ feedback[0] }})">
+                                <i class="bi bi-eye"></i> Mark Reviewed
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#responseModal" onclick="setFeedbackId({{ feedback[0] }}, {{ feedback[7][:50]|tojson }})">
+                                <i class="bi bi-reply"></i> Respond
+                            </button>
+                            {% if feedback[10] != 'resolved' %}
+                            <button class="btn btn-outline-secondary btn-sm" onclick="markAsResolved({{ feedback[0] }})">
+                                <i class="bi bi-check2"></i> Mark Resolved
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-chat-square-text text-muted" style="font-size: 3rem;"></i>
+                <h5 class="text-muted mt-3">No feedback submissions yet</h5>
+                <p class="text-muted">Student feedback will appear here when submitted.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Response Modal -->
+<div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="responseModalLabel">
+                    <i class="bi bi-reply"></i> Respond to Feedback
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('admin.respond_to_feedback') }}" id="responseForm">
+                    <input type="hidden" id="feedbackIdInput" name="feedback_id" value="">
+                    <div class="mb-3">
+                        <label for="feedbackPreview" class="form-label">Student Feedback</label>
+                        <div class="form-control" id="feedbackPreview" style="background-color: #f8f9fa; min-height: 60px;" readonly></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminResponse" class="form-label">Your Response</label>
+                        <textarea class="form-control" id="adminResponse" name="admin_response" rows="4" 
+                                 placeholder="Type your response to the student's feedback..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="markResolved" name="mark_resolved">
+                            <label class="form-check-label" for="markResolved">
+                                Mark as resolved after responding
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="responseForm">
+                    <i class="bi bi-send"></i> Send Response
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Filter functionality
+document.getElementById('categoryFilter').addEventListener('change', filterFeedback);
+document.getElementById('ratingFilter').addEventListener('change', filterFeedback);
+document.getElementById('searchFeedback').addEventListener('input', filterFeedback);
+
+function filterFeedback() {
+    const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+    const ratingFilter = document.getElementById('ratingFilter').value;
+    const searchTerm = document.getElementById('searchFeedback').value.toLowerCase();
+    const items = document.querySelectorAll('.feedback-item');
+    
+    items.forEach(item => {
+        const category = item.getAttribute('data-category').toLowerCase();
+        const rating = item.getAttribute('data-rating');
+        const searchText = item.getAttribute('data-search');
+        
+        const categoryMatch = categoryFilter === '' || category === categoryFilter;
+        const ratingMatch = ratingFilter === '' || rating === ratingFilter;
+        const searchMatch = searchTerm === '' || searchText.includes(searchTerm);
+        
+        if (categoryMatch && ratingMatch && searchMatch) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function setFeedbackId(feedbackId, feedbackText) {
+    document.getElementById('feedbackIdInput').value = feedbackId;
+    document.getElementById('feedbackPreview').textContent = feedbackText;
+}
+
+function markAsReviewed(feedbackId) {
+    if (confirm('Mark this feedback as reviewed?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("admin.update_feedback_status") }}';
+        
+        const feedbackInput = document.createElement('input');
+        feedbackInput.type = 'hidden';
+        feedbackInput.name = 'feedback_id';
+        feedbackInput.value = feedbackId;
+        
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = 'reviewed';
+        
+        form.appendChild(feedbackInput);
+        form.appendChild(statusInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function markAsResolved(feedbackId) {
+    if (confirm('Mark this feedback as resolved?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("admin.update_feedback_status") }}';
+        
+        const feedbackInput = document.createElement('input');
+        feedbackInput.type = 'hidden';
+        feedbackInput.name = 'feedback_id';
+        feedbackInput.value = feedbackId;
+        
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = 'resolved';
+        
+        form.appendChild(feedbackInput);
+        form.appendChild(statusInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

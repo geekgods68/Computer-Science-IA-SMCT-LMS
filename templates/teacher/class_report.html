@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Report - {{ class_info.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .table th {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .stats-card {
+            border-left: 4px solid #28a745;
+        }
+        .print-hide {
+            display: none;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-hide {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success no-print">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}">
+                <i class="bi bi-person-workspace"></i> Teacher Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.marks_roster') }}">
+                    <i class="bi bi-arrow-left"></i> Back to Marks
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show no-print" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Report Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0"><i class="bi bi-bar-chart"></i> Class Assessment Report</h4>
+                            <small class="text-muted">{{ class_name }} - {{ subject_name }}</small>
+                        </div>
+                        <div class="no-print">
+                            <button type="button" class="btn btn-outline-success" onclick="window.print()">
+                                <i class="bi bi-printer"></i> Print Report
+                            </button>
+                            <a href="{{ url_for('teacher.marks_roster') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Marks
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Report Details</h6>
+                                <p class="mb-1"><strong>Class:</strong> {{ class_name }}</p>
+                                <p class="mb-1"><strong>Subject:</strong> {{ subject_name }}</p>
+                                {% if from_date or to_date %}
+                                    <p class="mb-1"><strong>Date Range:</strong> 
+                                        {% if from_date %}{{ from_date }}{% else %}Beginning{% endif %} 
+                                        to 
+                                        {% if to_date %}{{ to_date }}{% else %}Present{% endif %}
+                                    </p>
+                                {% endif %}
+                                <p class="mb-0"><strong>Generated:</strong> {{ moment().format('YYYY-MM-DD HH:mm') if moment else 'N/A' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                {% if assessments_stats %}
+                                    {% set total_assessments = assessments_stats|length %}
+                                    {% set total_students = assessments_stats[0][5] if assessments_stats else 0 %}
+                                    {% set avg_class_score = (assessments_stats|sum(attribute=6) / total_assessments)|round(2) if total_assessments > 0 else 0 %}
+                                    <h6>Summary Statistics</h6>
+                                    <p class="mb-1"><strong>Total Assessments:</strong> {{ total_assessments }}</p>
+                                    <p class="mb-1"><strong>Average Students per Assessment:</strong> {{ (assessments_stats|sum(attribute=5) / total_assessments)|round(1) if total_assessments > 0 else 0 }}</p>
+                                    <p class="mb-0"><strong>Overall Class Average:</strong> {{ avg_class_score }}%</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessment Statistics -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-graph-up"></i> Assessment Performance</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if assessments_stats %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Assessment</th>
+                                            <th>Date</th>
+                                            <th>Max Score</th>
+                                            <th>Weight</th>
+                                            <th>Students</th>
+                                            <th>Average</th>
+                                            <th>Min Score</th>
+                                            <th>Max Score</th>
+                                            <th>Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for assessment in assessments_stats %}
+                                            {% set avg_percentage = (assessment[6] / assessment[3] * 100)|round(2) if assessment[6] and assessment[3] else 0 %}
+                                            {% set min_percentage = (assessment[7] / assessment[3] * 100)|round(2) if assessment[7] and assessment[3] else 0 %}
+                                            {% set max_percentage = (assessment[8] / assessment[3] * 100)|round(2) if assessment[8] and assessment[3] else 0 %}
+                                            <tr>
+                                                <td>{{ assessment[1] }}</td>
+                                                <td>{{ assessment[2] }}</td>
+                                                <td>{{ assessment[3] }}</td>
+                                                <td>{{ assessment[4] }}</td>
+                                                <td>{{ assessment[5] }}</td>
+                                                <td>{{ assessment[6]|round(2) if assessment[6] else 'N/A' }}</td>
+                                                <td>{{ assessment[7]|round(2) if assessment[7] else 'N/A' }}</td>
+                                                <td>{{ assessment[8]|round(2) if assessment[8] else 'N/A' }}</td>
+                                                <td>
+                                                    {% if assessment[6] %}
+                                                        <span class="badge bg-{{ 'success' if avg_percentage >= 80 else 'warning' if avg_percentage >= 60 else 'danger' }}">
+                                                            {{ avg_percentage }}%
+                                                        </span>
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Performance Analysis -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6>Performance Analysis</h6>
+                                    <div class="row">
+                                        {% set high_performers = assessments_stats|selectattr(6)|map(attribute=6)|map('div', assessments_stats|selectattr(3)|map(attribute=3)|first)|map('multiply', 100)|select('>=', 80)|list|length %}
+                                        {% set average_performers = assessments_stats|selectattr(6)|map(attribute=6)|map('div', assessments_stats|selectattr(3)|map(attribute=3)|first)|map('multiply', 100)|select('>=', 60)|select('<', 80)|list|length %}
+                                        {% set below_average = assessments_stats|selectattr(6)|map(attribute=6)|map('div', assessments_stats|selectattr(3)|map(attribute=3)|first)|map('multiply', 100)|select('<', 60)|list|length %}
+                                        
+                                        <div class="col-md-4">
+                                            <div class="card stats-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-success">{{ high_performers }}</h4>
+                                                    <p class="mb-0">High Performing Assessments (≥80%)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card stats-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-warning">{{ average_performers }}</h4>
+                                                    <p class="mb-0">Average Performing Assessments (60-79%)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card stats-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-danger">{{ below_average }}</h4>
+                                                    <p class="mb-0">Below Average Assessments (<60%)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6><i class="bi bi-lightbulb"></i> Recommendations</h6>
+                                        <ul class="mb-0">
+                                            {% if avg_class_score < 60 %}
+                                                <li>Consider reviewing teaching methods and providing additional support materials</li>
+                                                <li>Identify struggling students and provide individual assistance</li>
+                                            {% elif avg_class_score < 80 %}
+                                                <li>Good progress! Consider additional practice materials for challenging topics</li>
+                                                <li>Recognize high-performing students and encourage peer tutoring</li>
+                                            {% else %}
+                                                <li>Excellent class performance! Consider introducing more challenging material</li>
+                                                <li>Use high performers as peer mentors for other classes</li>
+                                            {% endif %}
+                                            <li>Regular assessment helps track student progress - consider more frequent evaluations</li>
+                                            <li>Provide detailed feedback on each assessment to help students improve</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <h5 class="text-muted mt-3">No Assessment Data Available</h5>
+                                <p class="text-muted">No assessments found for the selected criteria. Create assessments and enter marks to generate reports.</p>
+                                <a href="{{ url_for('teacher.marks_roster') }}" class="btn btn-success">
+                                    <i class="bi bi-plus"></i> Create Assessment
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Student - {{ student.name }} - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .marks-card {
+            transition: all 0.2s ease;
+        }
+        .marks-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .grade-badge {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .grade-A, .grade-A\+ { background-color: #d4edda; color: #155724; }
+        .grade-B, .grade-B\+ { background-color: #cce7ff; color: #0056b3; }
+        .grade-C { background-color: #fff3cd; color: #856404; }
+        .grade-D { background-color: #f8d7da; color: #721c24; }
+        .grade-F { background-color: #dc3545; color: white; }
+        .student-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .assignment-type-badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}">
+                <i class="bi bi-person-workspace"></i> Teacher Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.marks_roster', class_id=class_data.id) }}">
+                    <i class="bi bi-arrow-left"></i> Back to Marks Roster
+                </a>
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Student Header -->
+        <div class="student-header text-center">
+            <h1 class="mb-2">
+                <i class="bi bi-person-circle"></i> {{ student.name }}
+            </h1>
+            <p class="mb-2 h5">Username: {{ student.username }}</p>
+            <p class="mb-0">
+                <i class="bi bi-book"></i> {{ class_data.name }} - {{ class_data.subject }} 
+                <span class="badge bg-light text-dark ms-2">Grade {{ class_data.grade_level }}</span>
+            </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if assignments %}
+        <!-- Marks Form -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-clipboard-check"></i> Assignment Marks
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('teacher.save_individual_marks') }}">
+                    <input type="hidden" name="student_id" value="{{ student.id }}">
+                    <input type="hidden" name="class_id" value="{{ class_data.id }}">
+                    
+                    <div class="row">
+                        {% for assignment in assignments %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card marks-card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">{{ assignment.title }}</h6>
+                                    <span class="badge bg-secondary assignment-type-badge">
+                                        {{ assignment.type.title() }}
+                                    </span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <p class="text-muted mb-2">
+                                            <i class="bi bi-calendar3"></i> Due: {{ assignment.due_date }}
+                                        </p>
+                                        <p class="text-muted mb-3">
+                                            <i class="bi bi-award"></i> Total: {{ assignment.total_marks }} marks
+                                        </p>
+                                    </div>
+
+                                    <!-- Current Marks Display -->
+                                    {% if assignment.marks_obtained is not none %}
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <strong>Current: {{ assignment.marks_obtained }}/{{ assignment.student_total_marks or assignment.total_marks }}</strong>
+                                            </span>
+                                            {% if assignment.grade %}
+                                            <span class="grade-badge grade-{{ assignment.grade }}">{{ assignment.grade }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if assignment.remarks %}
+                                        <small class="text-muted">{{ assignment.remarks }}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-warning py-2 mb-3">
+                                        <i class="bi bi-exclamation-circle"></i> Not marked yet
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Marks Input -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Marks Obtained</label>
+                                        <input type="number" 
+                                               name="marks_{{ assignment.id }}" 
+                                               class="form-control" 
+                                               min="0" 
+                                               max="{{ assignment.total_marks }}" 
+                                               step="0.5"
+                                               value="{{ assignment.marks_obtained if assignment.marks_obtained is not none else '' }}"
+                                               placeholder="0 - {{ assignment.total_marks }}">
+                                    </div>
+
+                                    <!-- Remarks Input -->
+                                    <div class="mb-0">
+                                        <label class="form-label">Remarks</label>
+                                        <textarea name="remarks_{{ assignment.id }}" 
+                                                  class="form-control" 
+                                                  rows="2" 
+                                                  placeholder="Optional remarks...">{{ assignment.remarks or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-success btn-lg me-3">
+                                <i class="bi bi-check-circle"></i> Save All Marks
+                            </button>
+                            <a href="{{ url_for('teacher.marks_roster', class_id=class_data.id) }}" 
+                               class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Back to Roster
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h4 class="text-primary mb-1">{{ assignments|length }}</h4>
+                            <small class="text-muted">Total Assignments</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h4 class="text-success mb-1">
+                                {{ assignments|selectattr('marks_obtained')|selectattr('marks_obtained', 'ne', none)|list|length }}
+                            </h4>
+                            <small class="text-muted">Marked</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h4 class="text-warning mb-1">
+                                {{ assignments|selectattr('marks_obtained', 'none')|list|length }}
+                            </h4>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            {% set total_obtained = assignments|selectattr('marks_obtained')|selectattr('marks_obtained', 'ne', none)|sum(attribute='marks_obtained') %}
+                            {% set total_possible = assignments|selectattr('marks_obtained')|selectattr('marks_obtained', 'ne', none)|sum(attribute='total_marks') %}
+                            <h4 class="text-info mb-1">
+                                {% if total_possible > 0 %}
+                                {{ "%.1f"|format((total_obtained / total_possible) * 100) }}%
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">Average</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> 
+            No assignments found for this class. 
+            <a href="{{ url_for('teacher.my_assignments') }}" class="alert-link">Create assignments</a> first.
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-calculate percentage and provide visual feedback
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', function() {
+                const maxMarks = parseFloat(this.max);
+                const currentMarks = parseFloat(this.value);
+                
+                if (!isNaN(currentMarks) && !isNaN(maxMarks) && maxMarks > 0) {
+                    const percentage = (currentMarks / maxMarks) * 100;
+                    let color = 'text-secondary';
+                    
+                    if (percentage >= 90) color = 'text-success';
+                    else if (percentage >= 80) color = 'text-info';
+                    else if (percentage >= 70) color = 'text-warning';
+                    else if (percentage >= 60) color = 'text-primary';
+                    else color = 'text-danger';
+                    
+                    // Find the card and update visual feedback
+                    const card = this.closest('.marks-card');
+                    card.classList.remove('border-success', 'border-info', 'border-warning', 'border-danger');
+                    
+                    if (percentage >= 80) card.classList.add('border-success');
+                    else if (percentage >= 70) card.classList.add('border-info');
+                    else if (percentage >= 60) card.classList.add('border-warning');
+                    else if (!isNaN(percentage)) card.classList.add('border-danger');
+                }
+            });
+        });
+
+        // Confirmation before saving
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const filledInputs = Array.from(document.querySelectorAll('input[type="number"]'))
+                .filter(input => input.value.trim() !== '');
+            
+            if (filledInputs.length === 0) {
+                if (!confirm('No marks entered. Do you want to continue?')) {
+                    e.preventDefault();
+                }
+            } else {
+                // Show a brief success hint
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+                submitBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

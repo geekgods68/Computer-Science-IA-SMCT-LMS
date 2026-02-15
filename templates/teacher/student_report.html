@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Report - {{ student_name }} - {{ subject_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .table th {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .student-card {
+            border-left: 4px solid #28a745;
+        }
+        .grade-badge {
+            font-size: 1.1em;
+            padding: 0.5rem 1rem;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success no-print">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}">
+                <i class="bi bi-person-workspace"></i> Teacher Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.marks_roster') }}">
+                    <i class="bi bi-arrow-left"></i> Back to Marks
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Report Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card student-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0"><i class="bi bi-person-circle"></i> Individual Student Report</h4>
+                            <small class="text-muted">{{ student_name }} - {{ subject_name }}</small>
+                        </div>
+                        <div class="no-print">
+                            <button type="button" class="btn btn-outline-success" onclick="window.print()">
+                                <i class="bi bi-printer"></i> Print Report
+                            </button>
+                            <a href="{{ url_for('teacher.marks_roster') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Marks
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>Student Information</h6>
+                                <p class="mb-1"><strong>Name:</strong> {{ student_name }}</p>
+                                <p class="mb-1"><strong>Subject:</strong> {{ subject_name }}</p>
+                                <p class="mb-0"><strong>Report Generated:</strong> {{ moment().format('YYYY-MM-DD HH:mm') if moment else 'N/A' }}</p>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <h6>Overall Performance</h6>
+                                {% set grade_class = 'success' if weighted_average >= 80 else 'warning' if weighted_average >= 60 else 'danger' %}
+                                {% set grade_letter = 'A' if weighted_average >= 90 else 'B' if weighted_average >= 80 else 'C' if weighted_average >= 70 else 'D' if weighted_average >= 60 else 'F' %}
+                                <span class="badge bg-{{ grade_class }} grade-badge">
+                                    {{ weighted_average|round(1) }}% ({{ grade_letter }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessment Details -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-list-check"></i> Assessment Performance</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if marks %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Assessment</th>
+                                            <th>Date</th>
+                                            <th>Score</th>
+                                            <th>Max Score</th>
+                                            <th>Percentage</th>
+                                            <th>Weight</th>
+                                            <th>Weighted Points</th>
+                                            <th>Comments</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for mark in marks %}
+                                            {% set percentage = (mark[4] / mark[2] * 100)|round(2) if mark[4] and mark[2] else 0 %}
+                                            {% set weighted_points = (percentage * mark[3])|round(2) %}
+                                            <tr>
+                                                <td>{{ mark[0] }}</td>
+                                                <td>{{ mark[1] }}</td>
+                                                <td>{{ mark[4] if mark[4] is not none else 'N/A' }}</td>
+                                                <td>{{ mark[2] }}</td>
+                                                <td>
+                                                    {% if mark[4] is not none %}
+                                                        <span class="badge bg-{{ 'success' if percentage >= 80 else 'warning' if percentage >= 60 else 'danger' }}">
+                                                            {{ percentage }}%
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ mark[3] }}</td>
+                                                <td>{{ weighted_points if mark[4] is not none else 'N/A' }}</td>
+                                                <td>{{ mark[5] if mark[5] else '-' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Performance Summary -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6>Performance Summary</h6>
+                                    <div class="row">
+                                        {% set total_assessments = marks|length %}
+                                        {% set completed_assessments = marks|selectattr(4)|list|length %}
+                                        {% set high_scores = marks|selectattr(4)|map(attribute=4)|map('div', marks|selectattr(2)|map(attribute=2)|first)|map('multiply', 100)|select('>=', 80)|list|length %}
+                                        {% set avg_score = (marks|selectattr(4)|map(attribute=4)|sum / completed_assessments)|round(2) if completed_assessments > 0 else 0 %}
+                                        
+                                        <div class="col-md-3">
+                                            <div class="card student-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-primary">{{ total_assessments }}</h4>
+                                                    <p class="mb-0">Total Assessments</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card student-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-success">{{ completed_assessments }}</h4>
+                                                    <p class="mb-0">Completed</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card student-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-warning">{{ high_scores }}</h4>
+                                                    <p class="mb-0">High Scores (≥80%)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card student-card">
+                                                <div class="card-body text-center">
+                                                    <h4 class="text-info">{{ avg_score }}%</h4>
+                                                    <p class="mb-0">Average Score</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Chart (Simple Text-based) -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h6>Progress Trend</h6>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            {% set sorted_marks = marks|sort(attribute=1) %}
+                                            <div class="d-flex align-items-center justify-content-between" style="height: 100px;">
+                                                {% for mark in sorted_marks %}
+                                                    {% if mark[4] is not none %}
+                                                        {% set percentage = (mark[4] / mark[2] * 100)|round(0) %}
+                                                        <div class="text-center" style="flex: 1;">
+                                                            <div class="progress" style="height: 60px; writing-mode: vertical-lr;">
+                                                                <div class="progress-bar bg-{{ 'success' if percentage >= 80 else 'warning' if percentage >= 60 else 'danger' }}" 
+                                                                     style="width: {{ percentage }}%;" 
+                                                                     title="{{ mark[0] }}: {{ percentage }}%">
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-muted">{{ mark[1] }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6><i class="bi bi-lightbulb"></i> Recommendations for {{ student_name }}</h6>
+                                        <ul class="mb-0">
+                                            {% if weighted_average >= 90 %}
+                                                <li>Excellent performance! Continue the outstanding work</li>
+                                                <li>Consider taking on additional challenging assignments</li>
+                                                <li>Excellent candidate for peer tutoring opportunities</li>
+                                            {% elif weighted_average >= 80 %}
+                                                <li>Very good performance! Keep up the consistent effort</li>
+                                                <li>Focus on maintaining current study habits</li>
+                                                <li>Minor improvements could lead to exceptional results</li>
+                                            {% elif weighted_average >= 70 %}
+                                                <li>Good progress! There's room for improvement</li>
+                                                <li>Consider additional study time for challenging topics</li>
+                                                <li>Seek clarification on areas of difficulty</li>
+                                            {% elif weighted_average >= 60 %}
+                                                <li>Fair performance. More focused effort needed</li>
+                                                <li>Schedule regular study sessions and review materials</li>
+                                                <li>Consider seeking additional help from teacher or peers</li>
+                                            {% else %}
+                                                <li>Performance needs significant improvement</li>
+                                                <li>Strongly recommend scheduling one-on-one tutoring sessions</li>
+                                                <li>Review study methods and time management strategies</li>
+                                                <li>Complete all assignments and participate actively in class</li>
+                                            {% endif %}
+                                            <li>Regular attendance and active participation are key to success</li>
+                                            <li>Don't hesitate to ask questions during class or office hours</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <h5 class="text-muted mt-3">No Assessment Data Available</h5>
+                                <p class="text-muted">No marks found for {{ student_name }} in {{ subject_name }}.</p>
+                                <a href="{{ url_for('teacher.marks_roster') }}" class="btn btn-success">
+                                    <i class="bi bi-pencil"></i> Enter Marks
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

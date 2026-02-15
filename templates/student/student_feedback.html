@@ -1,0 +1,86 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Anonymous Feedback - Student Portal{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-title">
+        <i class="bi bi-chat-dots"></i>
+        <span>Anonymous Feedback</span>
+    </div>
+    <p class="page-subtitle">Share your thoughts and suggestions anonymously to help us improve.</p>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'success' %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% elif category == 'error' %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% if feedback_submitted %}
+        <div class="alert alert-success" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong>Thank you!</strong> Your feedback has been submitted successfully and sent to the administration.
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('student.feedback') }}" class="btn btn-primary">
+                <i class="bi bi-plus me-2"></i>Submit Another Feedback
+            </a>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-secondary ms-2">
+                <i class="bi bi-house me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-pencil me-2"></i>Submit Feedback</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('student.feedback') }}">
+                    <div class="mb-4">
+                        <label for="feedback_text" class="form-label">
+                            <strong>Your Feedback</strong>
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="feedback_text" 
+                            name="feedback_text" 
+                            rows="6" 
+                            placeholder="Share your thoughts, suggestions, or concerns here. Your feedback is completely anonymous and helps us improve our services."
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>
+                                    <strong>Note:</strong> This feedback is completely anonymous and will be sent directly to the administration.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>Submit Feedback
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

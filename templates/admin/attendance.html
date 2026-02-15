@@ -1,0 +1,337 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Attendance Management</div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('admin.mark_attendance') }}" style="background-color: #10b981; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            ➕ Mark Attendance
+        </a>
+        <a href="{{ url_for('admin.attendance_report') }}" style="background-color: #3b82f6; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            📊 Generate Report
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="background-color: {{ '#fee2e2' if category == 'error' else '#d1fae5' }}; border: 1px solid {{ '#f87171' if category == 'error' else '#10b981' }}; border-radius: 8px; padding: 16px; margin-bottom: 16px; color: {{ '#dc2626' if category == 'error' else '#065f46' }};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Quick Actions Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    ⚡ Quick Actions
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+        <div>
+            <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                ✅ Mark Attendance by Class
+            </h3>
+            <form method="GET" action="{{ url_for('admin.mark_attendance') }}" style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Select Class</label>
+                    <select name="class_id" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;" required>
+                        <option value="">Choose a class...</option>
+                        {% for class_info in classes %}
+                        <option value="{{ class_info[0] }}">{{ class_info[1] }} - Grade {{ class_info[4] if class_info[4] else 'N/A' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Date</label>
+                    <input type="date" name="date" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" required>
+                </div>
+                <button type="submit" style="background-color: #10b981; color: white; border: none; padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    ▶️ Mark Attendance
+                </button>
+            </form>
+        </div>
+        <div>
+            <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                📊 Generate Attendance Report
+            </h3>
+            <form method="GET" action="{{ url_for('admin.attendance_report') }}" style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Select Class (Optional)</label>
+                    <select name="class_id" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                        <option value="">All Classes</option>
+                        {% for class_info in classes %}
+                        <option value="{{ class_info[0] }}">{{ class_info[1] }} - Grade {{ class_info[4] if class_info[4] else 'N/A' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" style="background-color: #3b82f6; color: white; border: none; padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    📈 Generate Report
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Attendance Records Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    📋 Recent Attendance Records (Last 30 Days)
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+    {% if attendance_records %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #374151; color: white;">
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Date</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Student</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Class</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Status</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Notes</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Marked By</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600;">Marked On</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in attendance_records %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[1] }}</td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[4] }}</td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[6] }} - {{ record[5] }}</td>
+                <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                    {% if record[2] == 'present' %}
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Present</span>
+                    {% elif record[2] == 'absent' %}
+                        <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Absent</span>
+                    {% elif record[2] == 'late' %}
+                        <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Late</span>
+                    {% elif record[2] == 'excused' %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Excused</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[3] or '-' }}</td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[7] }}</td>
+                <td style="padding: 16px; color: #374151;">{{ record[8] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: #6b7280;">
+        <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+        <h3 style="color: #374151; margin-bottom: 8px;">No attendance records found</h3>
+        <p style="margin-bottom: 24px;">Start by marking attendance for a class to see records here.</p>
+        <a href="{{ url_for('admin.mark_attendance') }}" style="background-color: #10b981; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;">
+                            <i class="fas fa-plus"></i> Mark First Attendance
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Card Styling */
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #007bff !important;
+    color: white !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.25rem;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.25rem;
+    background-color: white;
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+    background-color: white;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+/* Form Styling */
+.form-select, .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Table Styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #007bff !important;
+    color: white !important;
+    border-bottom: 2px solid #007bff;
+    padding: 0.75rem;
+    font-weight: 600;
+}
+
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+/* Badge Styling */
+.badge {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+    color: white;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+    color: white;
+}
+
+/* Text Colors */
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Spacing */
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+.py-4 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.mt-3 {
+    margin-top: 1rem !important;
+}
+
+/* Form Layout */
+.d-flex {
+    display: flex;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.flex-grow-1 {
+    flex-grow: 1;
+}
+
+/* Icon spacing */
+.fas {
+    margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .me-2 {
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+}
+</style>
+
+<script>
+// Set today's date as default
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    const today = new Date().toISOString().split('T')[0];
+    dateInputs.forEach(input => {
+        if (!input.value) {
+            input.value = today;
+        }
+    });
+});
+</script>
+{% endblock %}

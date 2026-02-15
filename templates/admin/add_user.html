@@ -1,0 +1,319 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Add New Users</div>
+    </div>
+    <a href="{{ url_for('admin.manage_users') }}" style="background-color: #3b82f6; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+        <i class="bi bi-people"></i> Manage Existing Users
+    </a>
+</div>
+
+<!-- Create New User Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    <i class="bi bi-person"></i> Create New User
+</div>
+
+<form method="POST" action="{{ url_for('admin.add_user') }}" style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Username -->
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Username</label>
+            <input type="text" name="username" id="username" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Enter username">
+        </div>
+        
+        <!-- Password -->
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Password</label>
+            <input type="password" name="password" id="password" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Enter password">
+        </div>
+        
+        <!-- Role -->
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Role</label>
+            <select name="role" id="role" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+            </select>
+        </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Name -->
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Full Name</label>
+            <input type="text" name="name" id="name" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Enter full name (optional)">
+        </div>
+        
+        <!-- Email -->
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Email</label>
+            <input type="email" name="email" id="email" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Enter email (optional)">
+        </div>
+    </div>
+    
+    <!-- Teacher Assignment Section (hidden by default) -->
+    <div id="teacherAssignmentSection" style="display: none; margin-bottom: 24px; padding: 24px; background-color: #f0f9ff; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <h3 style="color: #2d3748; margin: 0 0 20px 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="bi bi-mortarboard"></i> Teacher Assignment
+        </h3>
+        
+        <!-- Teacher Classes Section -->
+        <div style="margin-bottom: 24px;">
+            <h4 style="color: #2d3748; margin: 0 0 15px 0; font-size: 16px; font-weight: 500;">Assign to Classes:</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                {% for class in classes %}
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                       onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#3b82f6'; if (!this.querySelector('input').checked) this.style.background='#eff6ff'"
+                       onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" name="teacher_classes" value="{{ class[0] }}" 
+                           style="width: 18px; height: 18px; accent-color: #3b82f6;"
+                           onchange="if (this.checked) { this.parentElement.style.borderColor='#3b82f6'; this.parentElement.style.background='#eff6ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                    <span style="color: #2d3748; font-weight: 500;">
+                        <i class="bi bi-book"></i> {{ class[1] }}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Teacher Subjects Section -->
+        <div>
+            <h4 style="color: #2d3748; margin: 0 0 15px 0; font-size: 16px; font-weight: 500;">Assign Subjects:</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                       onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#10b981'; if (!this.querySelector('input').checked) this.style.background='#ecfdf5'"
+                       onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" name="teacher_subjects" value="Math" 
+                           style="width: 18px; height: 18px; accent-color: #10b981;"
+                           onchange="if (this.checked) { this.parentElement.style.borderColor='#10b981'; this.parentElement.style.background='#ecfdf5'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                    <span style="color: #2d3748; font-weight: 500;"><i class="bi bi-calculator"></i> Math</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                       onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#10b981'; if (!this.querySelector('input').checked) this.style.background='#ecfdf5'"
+                       onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" name="teacher_subjects" value="Science" 
+                           style="width: 18px; height: 18px; accent-color: #10b981;"
+                           onchange="if (this.checked) { this.parentElement.style.borderColor='#10b981'; this.parentElement.style.background='#ecfdf5'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                    <span style="color: #2d3748; font-weight: 500;"><i class="bi bi-flask"></i> Science</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                       onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#10b981'; if (!this.querySelector('input').checked) this.style.background='#ecfdf5'"
+                       onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" name="teacher_subjects" value="English" 
+                           style="width: 18px; height: 18px; accent-color: #10b981;"
+                           onchange="if (this.checked) { this.parentElement.style.borderColor='#10b981'; this.parentElement.style.background='#ecfdf5'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                    <span style="color: #2d3748; font-weight: 500;"><i class="bi bi-pencil"></i> English</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                       onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#10b981'; if (!this.querySelector('input').checked) this.style.background='#ecfdf5'"
+                       onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" name="teacher_subjects" value="Hindi" 
+                           style="width: 18px; height: 18px; accent-color: #10b981;"
+                           onchange="if (this.checked) { this.parentElement.style.borderColor='#10b981'; this.parentElement.style.background='#ecfdf5'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                    <span style="color: #2d3748; font-weight: 500;">🇮🇳 Hindi</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Subject Selection (hidden by default) -->
+    <div id="studentSubjectsSection" style="display: none; margin-bottom: 24px; padding: 24px; background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
+        <h3 style="color: #2d3748; margin: 0 0 20px 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            📚 Subject Selection for Student
+        </h3>
+        <p style="color: #718096; margin-bottom: 20px;">Select the subjects this student will be interested in:</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                   onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                   onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                <input type="checkbox" name="subjects" value="Math" 
+                       style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                       onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    📐 Math
+                </span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                   onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                   onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                <input type="checkbox" name="subjects" value="Science" 
+                       style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                       onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    🔬 Science
+                </span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                   onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                   onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                <input type="checkbox" name="subjects" value="Social Science" 
+                       style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                       onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    🌍 Social Science
+                </span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                   onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                   onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                <input type="checkbox" name="subjects" value="Hindi" 
+                       style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                       onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    🇮🇳 Hindi
+                </span>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: white;"
+                   onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                   onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='white'">
+                <input type="checkbox" name="subjects" value="English" 
+                       style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                       onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='white'; }">
+                <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                    📝 English
+                </span>
+            </label>
+        </div>
+    </div>
+    
+    <!-- Create User Button -->
+    <button type="submit" style="background-color: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        ✓ Create User
+    </button>
+</form>
+
+<script>
+// Add focus styles for form elements
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Handle role selection styling and show/hide subject selection
+    const roleSelect = document.getElementById('role');
+    const studentSubjectsSection = document.getElementById('studentSubjectsSection');
+    const teacherAssignmentSection = document.getElementById('teacherAssignmentSection');
+    
+    roleSelect.addEventListener('change', function() {
+        if (this.value) {
+            this.style.color = '#374151';
+        } else {
+            this.style.color = '#6b7280';
+        }
+        
+        // Show/hide sections based on role
+        if (this.value === 'student') {
+            studentSubjectsSection.style.display = 'block';
+            teacherAssignmentSection.style.display = 'none';
+            
+            // Uncheck all teacher checkboxes when hiding
+            const teacherClassCheckboxes = document.querySelectorAll('input[name="teacher_classes"]');
+            const teacherSubjectCheckboxes = document.querySelectorAll('input[name="teacher_subjects"]');
+            
+            teacherClassCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const label = checkbox.parentElement;
+                label.style.borderColor = '#e2e8f0';
+                label.style.background = 'white';
+            });
+            
+            teacherSubjectCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const label = checkbox.parentElement;
+                label.style.borderColor = '#e2e8f0';
+                label.style.background = 'white';
+            });
+            
+        } else if (this.value === 'teacher') {
+            studentSubjectsSection.style.display = 'none';
+            teacherAssignmentSection.style.display = 'block';
+            
+            // Uncheck all student checkboxes when hiding
+            const studentSubjectCheckboxes = document.querySelectorAll('input[name="subjects"]');
+            studentSubjectCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const label = checkbox.parentElement;
+                label.style.borderColor = '#e2e8f0';
+                label.style.background = 'white';
+            });
+            
+        } else {
+            studentSubjectsSection.style.display = 'none';
+            teacherAssignmentSection.style.display = 'none';
+            
+            // Uncheck all checkboxes when hiding both sections
+            const allCheckboxes = document.querySelectorAll('input[name="subjects"], input[name="teacher_classes"], input[name="teacher_subjects"]');
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const label = checkbox.parentElement;
+                label.style.borderColor = '#e2e8f0';
+                label.style.background = 'white';
+            });
+        }
+    });
+});
+</script>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input::placeholder {
+    color: #9ca3af;
+}
+
+select:invalid {
+    color: #9ca3af;
+}
+
+select option {
+    color: #374151;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+table thead tr {
+    background-color: #374151 !important;
+}
+
+table thead tr:hover {
+    background-color: #374151 !important;
+}
+
+table thead th {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+table thead th:hover {
+    background-color: #374151 !important;
+    color: white !important;
+}
+</style>
+{% endblock %}

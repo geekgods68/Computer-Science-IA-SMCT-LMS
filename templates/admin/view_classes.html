@@ -1,0 +1,114 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="welcome-text">Welcome, admin!</div>
+<div class="page-title">Classes & Sessions</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin-top: 24px;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">ID</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Name</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Subject</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Grade</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Type</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Students</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if classes %}
+                {% for class in classes %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ class[0] }}</td>
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ class[1] }}</td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        {% if class[12] %}
+                            {% if class[12] == 'Math' %}
+                                <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% elif class[12] == 'English' %}
+                                <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% elif class[12] == 'Science' %}
+                                <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% elif class[12] == 'Hindi' %}
+                                <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% elif class[12] == 'Social Science' %}
+                                <span style="background-color: #8b5cf6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% else %}
+                                <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ class[12] }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="background-color: #9ca3af; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Not set</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ class[4] if class[4] else 'Not set' }}</td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        {% if class[2] == 'class' %}
+                            <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Class</span>
+                        {% elif class[2] == 'session' %}
+                            <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Session</span>
+                        {% else %}
+                            <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Class</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                        <span style="background-color: #e5e7eb; color: #374151; padding: 2px 8px; border-radius: 8px; font-size: 12px;">{{ class[13] }} enrolled</span>
+                    </td>
+                    <td style="padding: 16px;">
+                        <a href="{{ url_for('admin.view_class', class_id=class[0]) }}" style="background-color: #06b6d4; color: white; padding: 6px 16px; border-radius: 4px; text-decoration: none; font-size: 14px; margin-right: 8px;">View</a>
+                        <button onclick="deleteClass({{ class[0] }}, '{{ class[1] }}')" style="background-color: #ef4444; color: white; padding: 6px 16px; border-radius: 4px; border: none; font-size: 14px; cursor: pointer;">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" style="padding: 24px; text-align: center; color: #6b7280;">
+                        No classes found. <a href="{{ url_for('admin.create_class') }}" style="color: #3b82f6;">Create a new class</a>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+table tr:hover {
+    background-color: #f8f9fa;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+</style>
+
+<script>
+function deleteClass(classId, className) {
+    if (confirm('Are you sure you want to delete "' + className + '"? This action cannot be undone and will remove all associated student enrollments and data.')) {
+        fetch('/admin/delete_class/' + classId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Class deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting class: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting class. Please try again.');
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="welcome-text">Welcome, admin!</div>
+<div class="page-title">Add Students to Class</div>
+
+<form method="POST" action="{{ url_for('admin.assign_students') }}" style="max-width: 600px;">
+    <!-- Select Class -->
+    <div style="margin-bottom: 32px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Select Class</label>
+        <select name="class_id" id="class_id" required style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;">
+            <option value="">Choose a class...</option>
+            {% for class in classes %}
+            <option value="{{ class[0] }}">{{ class[1] }} ({{ class[2] }})</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Select Students -->
+    <div style="margin-bottom: 32px;">
+        <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 16px;">Select Students</label>
+        
+        {% if students %}
+        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0;">
+            <!-- Student List -->
+            {% for student in students %}
+            <label style="display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; cursor: pointer; margin: 0;" for="student_{{ student[0] }}">
+                <input type="checkbox" name="student_ids" value="{{ student[0] }}" id="student_{{ student[0] }}" style="margin-right: 12px; width: 16px; height: 16px;">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 16px; color: #374151; font-weight: 500;">{{ student[1] }}</span>
+                    {% if student[2] %}
+                    <span style="font-size: 14px; color: #6b7280;">{{ student[2] }}</span>
+                    {% endif %}
+                </div>
+            </label>
+            {% if loop.last %}
+            <style>
+                label[for="student_{{ student[0] }}"] {
+                    border-bottom: none !important;
+                }
+            </style>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 16px; color: #991b1b;">
+            <i class="bi bi-exclamation-triangle" style="margin-right: 8px;"></i>
+            No students found in the system. Please create student users first.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Students Button -->
+    <div>
+        <button type="submit" style="background-color: #3b82f6; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer;">
+            Add Students
+        </button>
+        <a href="{{ url_for('admin.dashboard') }}" style="background-color: #6b7280; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; text-decoration: none; display: inline-block; margin-left: 12px;">
+            Cancel
+        </a>
+    </div>
+</form>
+
+<script>
+// Add focus styles for form elements
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('class_id');
+    
+    select.addEventListener('focus', function() {
+        this.style.borderColor = '#3b82f6';
+        this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+    });
+    
+    select.addEventListener('blur', function() {
+        this.style.borderColor = '#d1d5db';
+        this.style.boxShadow = 'none';
+    });
+
+    // Add hover effects for student items
+    const studentLabels = document.querySelectorAll('label[for^="student_"]');
+    studentLabels.forEach(label => {
+        label.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        
+        label.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = 'transparent';
+        });
+    });
+});
+</script>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input[type="checkbox"]:checked {
+    accent-color: #3b82f6;
+}
+
+input[type="checkbox"] {
+    accent-color: #3b82f6;
+}
+</style>
+{% endblock %}

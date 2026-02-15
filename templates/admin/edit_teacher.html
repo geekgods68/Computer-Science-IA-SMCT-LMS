@@ -1,0 +1,214 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2 style="color: #1a365d; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 12px;">
+        <i class="bi bi-person-gear" style="color: #4299e1;"></i>
+        Edit Teacher: {{ teacher_name }}
+    </h2>
+    <a href="{{ url_for('admin.manage_users') }}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #718096; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; border: none;"
+       onmouseover="this.style.background='#4a5568'"
+       onmouseout="this.style.background='#718096'">
+        <i class="bi bi-arrow-left"></i> Back to Users
+    </a>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
+            <div style="padding: 15px 20px; margin-bottom: 20px; border-radius: 8px; border-left: 4px solid #e53e3e; background: #fed7d7; color: #9b2c2c; position: relative;">
+            {% else %}
+            <div style="padding: 15px 20px; margin-bottom: 20px; border-radius: 8px; border-left: 4px solid #38a169; background: #c6f6d5; color: #276749; position: relative;">
+            {% endif %}
+                {{ message }}
+                <button type="button" onclick="this.parentElement.style.display='none'" 
+                        style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 18px; cursor: pointer; color: inherit;">×</button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST" id="editTeacherForm">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <!-- Subject Assignment -->
+        <div>
+            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+                <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f7fafc;">
+                    <h5 style="margin: 0; color: #2d3748; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        <i class="bi bi-book" style="color: #9f7aea;"></i>
+                        Teaching Subjects
+                    </h5>
+                </div>
+                <div>
+                    <p style="color: #718096; margin-bottom: 20px;">Select the subjects this teacher will teach:</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for subject in available_subjects %}
+                        <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: #f7fafc;"
+                               onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#9f7aea'; if (!this.querySelector('input').checked) this.style.background='#faf5ff'"
+                               onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='#f7fafc'">
+                            <input type="checkbox" 
+                                   id="subject_{{ loop.index }}" 
+                                   name="subjects" 
+                                   value="{{ subject }}"
+                                   {% if subject in assigned_subjects %}checked{% endif %}
+                                   style="width: 18px; height: 18px; accent-color: #9f7aea;"
+                                   onchange="if (this.checked) { this.parentElement.style.borderColor='#9f7aea'; this.parentElement.style.background='#faf5ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='#f7fafc'; }">
+                            <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-journal-text" style="color: #9f7aea;"></i> {{ subject }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Class Assignment -->
+        <div>
+            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+                <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f7fafc;">
+                    <h5 style="margin: 0; color: #2d3748; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        <i class="bi bi-people" style="color: #4299e1;"></i>
+                        Teaching Classes
+                    </h5>
+                </div>
+                <div>
+                    <p style="color: #718096; margin-bottom: 20px;">Select the classes this teacher will teach:</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for class_info in all_classes %}
+                        <label style="display: flex; align-items: center; gap: 12px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: #f7fafc;"
+                               onmouseover="if (!this.querySelector('input').checked) this.style.borderColor='#4299e1'; if (!this.querySelector('input').checked) this.style.background='#ebf8ff'"
+                               onmouseout="if (!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'; if (!this.querySelector('input').checked) this.style.background='#f7fafc'">
+                            <input type="checkbox" 
+                                   id="class_{{ class_info[0] }}" 
+                                   name="classes" 
+                                   value="{{ class_info[0] }}"
+                                   {% if class_info[0] in assigned_classes %}checked{% endif %}
+                                   style="width: 18px; height: 18px; accent-color: #4299e1;"
+                                   onchange="if (this.checked) { this.parentElement.style.borderColor='#4299e1'; this.parentElement.style.background='#ebf8ff'; } else { this.parentElement.style.borderColor='#e2e8f0'; this.parentElement.style.background='#f7fafc'; }">
+                            <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                                {% if class_info[2] == 'session' %}
+                                    <i class="bi bi-calendar-event" style="color: #4299e1;"></i> {{ class_info[1] }} 
+                                    <span style="background: #4299e1; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Session</span>
+                                {% else %}
+                                    <i class="bi bi-mortarboard" style="color: #38a169;"></i> {{ class_info[1] }} 
+                                    <span style="background: #38a169; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">Class</span>
+                                {% endif %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; text-align: center; margin-bottom: 30px;">
+        <div style="display: flex; justify-content: center; gap: 20px;">
+            <button type="submit" 
+                    style="display: inline-flex; align-items: center; gap: 8px; padding: 15px 30px; background: #4299e1; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.2s ease;"
+                    onmouseover="this.style.background='#3182ce'"
+                    onmouseout="this.style.background='#4299e1'">
+                <i class="bi bi-check-circle"></i> Update Teacher Assignments
+            </button>
+            <a href="{{ url_for('admin.manage_users') }}" 
+               style="display: inline-flex; align-items: center; gap: 8px; padding: 15px 30px; background: #718096; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; transition: all 0.2s ease;"
+               onmouseover="this.style.background='#4a5568'"
+               onmouseout="this.style.background='#718096'">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
+<!-- Current Assignments Summary -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div>
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f7fafc; background: #faf5ff; margin: -25px -25px 20px -25px; padding: 20px 25px; border-radius: 12px 12px 0 0;">
+                <h6 style="margin: 0; color: #553c9a; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                    <i class="bi bi-info-circle"></i> Current Subject Assignments
+                </h6>
+            </div>
+            <div>
+                {% if assigned_subjects %}
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        {% for subject in assigned_subjects %}
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f7fafc; border-radius: 6px; border-left: 4px solid #9f7aea;">
+                            <i class="bi bi-check-circle" style="color: #38a169;"></i>
+                            <span style="color: #2d3748; font-weight: 500;">{{ subject }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: #718096; margin: 0; text-align: center; padding: 20px;">No subjects assigned</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div>
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f7fafc; background: #ebf8ff; margin: -25px -25px 20px -25px; padding: 20px 25px; border-radius: 12px 12px 0 0;">
+                <h6 style="margin: 0; color: #2b6cb0; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                    <i class="bi bi-info-circle"></i> Current Class Assignments
+                </h6>
+            </div>
+            <div>
+                {% if assigned_classes %}
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        {% for class_info in assigned_classes %}
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f7fafc; border-radius: 6px; border-left: 4px solid #4299e1;">
+                            <i class="bi bi-check-circle" style="color: #38a169;"></i>
+                            <span style="color: #2d3748; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                                {% if class_info[2] == 'session' %}
+                                    {{ class_info[1] }} 
+                                    <span style="background: #4299e1; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 600;">Session</span>
+                                {% else %}
+                                    {{ class_info[1] }} 
+                                    <span style="background: #38a169; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 600;">Class</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: #718096; margin: 0; text-align: center; padding: 20px;">No classes assigned</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.getElementById('editTeacherForm').addEventListener('submit', function(e) {
+    const checkedSubjects = document.querySelectorAll('input[name="subjects"]:checked');
+    const checkedClasses = document.querySelectorAll('input[name="classes"]:checked');
+    
+    if (checkedSubjects.length === 0 && checkedClasses.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one subject or class for the teacher.');
+        return false;
+    }
+});
+
+// Initialize checkbox styling on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        if (checkbox.checked) {
+            const label = checkbox.parentElement;
+            if (checkbox.name === 'subjects') {
+                label.style.borderColor = '#9f7aea';
+                label.style.background = '#faf5ff';
+            } else if (checkbox.name === 'classes') {
+                label.style.borderColor = '#4299e1';
+                label.style.background = '#ebf8ff';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

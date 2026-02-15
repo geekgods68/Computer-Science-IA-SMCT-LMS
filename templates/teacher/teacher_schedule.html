@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedule - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}"><i class="bi bi-person-workspace"></i> Teacher Portal</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h2 class="card-title text-primary">
+                            <i class="bi bi-calendar-week"></i> My Teaching Schedule
+                        </h2>
+                        <p class="card-text">View your weekly timetable and upcoming class reminders.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-day text-success" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Today's Classes</h5>
+                        <p class="card-text">{{ todays_classes_count or 0 }} classes scheduled</p>
+                        <button class="btn btn-success" onclick="showTodayClasses()">
+                            <i class="bi bi-eye"></i> View Today
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-bell text-warning" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Upcoming Reminders</h5>
+                        <p class="card-text">{{ next_class_info or 'No upcoming classes' }}</p>
+                        <button class="btn btn-warning" onclick="showReminders()">
+                            <i class="bi bi-alarm"></i> View Reminders
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-plus text-info" style="font-size: 2rem;"></i>
+                        <h5 class="card-title mt-2">Schedule Meeting</h5>
+                        <p class="card-text">Book extra classes</p>
+                        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#scheduleMeetingModal">
+                            <i class="bi bi-plus-circle"></i> Schedule
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Schedule -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-table"></i> Weekly Timetable</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i> Export
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-printer"></i> Print
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if weekly_schedule %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered text-center">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Monday</th>
+                                            <th>Tuesday</th>
+                                            <th>Wednesday</th>
+                                            <th>Thursday</th>
+                                            <th>Friday</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for time_slot in weekly_schedule %}
+                                        <tr>
+                                            <td class="fw-bold">{{ time_slot.time }}</td>
+                                            {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] %}
+                                                {% if time_slot[day] %}
+                                                    <td class="table-primary">
+                                                        <strong>{{ time_slot[day].subject }}</strong><br>
+                                                        {{ time_slot[day].class_name }}<br>
+                                                        <small>{{ time_slot[day].room or 'Room TBA' }}</small>
+                                                    </td>
+                                                {% else %}
+                                                    <td class="table-light">Free</td>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                                <h4 class="text-muted mt-3">No Schedule Available</h4>
+                                <p class="text-muted">Your teaching schedule hasn't been set up yet. Please contact the admin for schedule information.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Detailed Schedule -->
+        <div class="row mb-4" id="todaySchedule">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-calendar-day"></i> Today's Detailed Schedule</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if todays_schedule %}
+                            <div class="timeline">
+                                {% for class in todays_schedule %}
+                                <div class="row mb-3 p-3 border rounded">
+                                    <div class="col-md-2">
+                                        <strong class="text-primary">{{ class.start_time }}</strong>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <h6>{{ class.subject }} - {{ class.class_name }}</h6>
+                                        <p class="mb-1">{{ class.topic or 'Topic TBA' }}</p>
+                                        <small class="text-muted">{{ class.meeting_link or 'Meeting link TBA' }} | Duration: {{ class.duration or '1 hour' }}</small>
+                                        <div class="mt-2">
+                                            <span class="badge bg-{{ class.status_color }}">{{ class.status }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-calendar-day text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No Classes Today</h5>
+                                <p class="text-muted">You have no classes scheduled for today.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bell"></i> Class Reminders</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if next_class %}
+                            <div class="alert alert-warning" role="alert">
+                                <h6 class="alert-heading"><i class="bi bi-clock"></i> Next Class</h6>
+                                <p>{{ next_class.subject }} - {{ next_class.class_name }}</p>
+                                <p>Starts in: <strong>{{ next_class.time_until }}</strong></p>
+                                <hr>
+                                {% if next_class.meeting_link %}
+                                    <a href="{{ next_class.meeting_link }}" target="_blank" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-video"></i> Join Meeting
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-warning" disabled>
+                                        <i class="bi bi-geo-alt"></i> In-Person Class
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> No Upcoming Classes</h6>
+                                <p>You have no more classes scheduled for today.</p>
+                            </div>
+                        {% endif %}
+
+                        <!-- Additional Reminders -->
+                        {% if reminders %}
+                            {% for reminder in reminders[1:] %}
+                                <div class="alert alert-light border" role="alert">
+                                    <h6 class="alert-heading mb-1">
+                                        <i class="bi bi-{{ 'exclamation-triangle' if reminder.priority == 'high' else 'info-circle' }}"></i>
+                                        {{ reminder.title }}
+                                    </h6>
+                                    <small class="text-muted">{{ reminder.time }}</small>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <!-- General Status -->
+                        <div class="mt-3">
+                            {% if todays_classes_count > 0 %}
+                                <div class="alert alert-light border" role="alert">
+                                    <h6 class="alert-heading mb-1"><i class="bi bi-calendar-check"></i> Today's Summary</h6>
+                                    <p class="mb-0">You have <strong>{{ todays_classes_count }}</strong> class{{ 'es' if todays_classes_count != 1 else '' }} scheduled today</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-success" role="alert">
+                                    <h6 class="alert-heading"><i class="bi bi-check-circle"></i> Free Day</h6>
+                                    <p class="mb-0">No classes scheduled for today. Perfect time for preparation!</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Meeting Modal -->
+    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-plus"></i> Schedule Extra Class/Meeting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="meetingClass" class="form-label">Select Class</label>
+                            <select class="form-select" id="meetingClass" required>
+                                <option value="">Choose class...</option>
+                                {% if classes %}
+                                    {% for class in classes %}
+                                        <option value="{{ class[0] }}">
+                                            {{ class[1] }}{% if class[2] %} - Grade {{ class[2] }}{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>No classes assigned</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingSubject" class="form-label">Subject</label>
+                            <select class="form-select" id="meetingSubject" required>
+                                <option value="">Choose subject...</option>
+                                {% if teacher_subjects %}
+                                    {% for subject in teacher_subjects %}
+                                        <option value="{{ subject[1] }}">{{ subject[0] }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="" disabled>No subjects available</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="meetingDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="meetingDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="meetingTime" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="meetingTime" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingDuration" class="form-label">Duration (minutes)</label>
+                            <select class="form-select" id="meetingDuration" required>
+                                <option value="30">30 minutes</option>
+                                <option value="60" selected>1 hour</option>
+                                <option value="90">1.5 hours</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingRoom" class="form-label">Room/Location</label>
+                            <input type="text" class="form-control" id="meetingRoom" placeholder="e.g., Room 101, Lab 201" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="meetingPurpose" class="form-label">Purpose/Topic</label>
+                            <textarea class="form-control" id="meetingPurpose" rows="3" placeholder="Describe the purpose of this extra class..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info">
+                        <i class="bi bi-calendar-plus"></i> Schedule Class
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showTodayClasses() {
+            document.getElementById('todaySchedule').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showReminders() {
+            // Focus on reminders section
+            document.querySelector('.alert-warning').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

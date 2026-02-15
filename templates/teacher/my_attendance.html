@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .status-badge {
+            font-size: 0.8em;
+            padding: 0.25em 0.5em;
+        }
+        .status-present { background-color: #28a745; color: white; }
+        .status-absent { background-color: #dc3545; color: white; }
+        .status-late { background-color: #ffc107; color: black; }
+        .status-excused { background-color: #17a2b8; color: white; }
+        .attendance-card {
+            border-left: 4px solid #007bff;
+            margin-bottom: 1rem;
+        }
+        .date-header {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+        }
+        .summary-card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}"><i class="bi bi-person-workspace"></i> Teacher Portal</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-primary mb-4">
+                    <i class="bi bi-calendar-check"></i> My Attendance Reports
+                </h2>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error: {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Class Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-mortarboard"></i> Select Class</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if teacher_classes %}
+                        <div class="row">
+                            {% for class in teacher_classes %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <a href="{{ url_for('teacher.my_attendance', class_id=class[0]) }}" 
+                                   class="card text-decoration-none h-100 {% if selected_class_id == class[0] %}border-primary bg-primary bg-opacity-10{% endif %}">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-book fs-3 text-primary"></i>
+                                        <h6 class="card-title mt-2 mb-1">{{ class[1] }}</h6>
+                                        <small class="text-muted">{{ class[2] }}</small>
+                                        {% if selected_class_id == class[0] %}
+                                        <div class="mt-2">
+                                            <span class="badge bg-primary">Selected</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No classes assigned to you yet.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if selected_class %}
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-funnel"></i> Filters for {{ selected_class[1] }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+                            
+                            <div class="col-md-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ filters.start_date }}">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{{ filters.end_date }}">
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Statuses</option>
+                                    <option value="present" {% if filters.status == 'present' %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if filters.status == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="late" {% if filters.status == 'late' %}selected{% endif %}>Late</option>
+                                    <option value="excused" {% if filters.status == 'excused' %}selected{% endif %}>Excused</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-search"></i> Filter
+                                </button>
+                                <a href="{{ url_for('teacher.my_attendance', class_id=selected_class_id) }}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-clockwise"></i> Clear
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        {% if attendance_summary.total_records > 0 %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-3">Attendance Summary</h5>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-primary mb-1">{{ attendance_summary.total_records }}</h4>
+                        <small class="text-muted">Total Records</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-success mb-1">{{ attendance_summary.present }}</h4>
+                        <small class="text-muted">Present</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-danger mb-1">{{ attendance_summary.absent }}</h4>
+                        <small class="text-muted">Absent</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-warning mb-1">{{ attendance_summary.late }}</h4>
+                        <small class="text-muted">Late</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-info mb-1">{{ attendance_summary.excused }}</h4>
+                        <small class="text-muted">Excused</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 col-6 mb-3">
+                <div class="card summary-card text-center">
+                    <div class="card-body">
+                        <h4 class="text-success mb-1">{{ attendance_summary.present_percentage }}%</h4>
+                        <small class="text-muted">Attendance Rate</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Attendance Records -->
+        <div class="row">
+            <div class="col-12">
+                <h5 class="mb-3">Attendance Records</h5>
+                
+                {% if attendance_data %}
+                {% for date, records in attendance_data.items() %}
+                <div class="attendance-card">
+                    <div class="date-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-event"></i> {{ date }}
+                            <span class="badge bg-secondary ms-2">{{ records|length }} students</span>
+                        </h6>
+                    </div>
+                    
+                    <div class="row g-2 px-3 pb-3">
+                        {% for record in records %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ record.student_name }}</strong>
+                                            {% if record.notes %}
+                                            <br><small class="text-muted">{{ record.notes }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge status-badge status-{{ record.status }}">
+                                            {{ record.status.title() }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                        <h5 class="mt-3 text-muted">No Attendance Records Found</h5>
+                        <p class="text-muted">
+                            {% if selected_class %}
+                            No attendance has been recorded for {{ selected_class[1] }} yet.
+                            {% else %}
+                            Please select a class to view attendance records.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Instructions when no class is selected -->
+        {% if not selected_class and teacher_classes %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    Please select a class above to view attendance reports and analytics.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

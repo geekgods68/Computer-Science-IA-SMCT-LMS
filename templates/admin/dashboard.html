@@ -1,0 +1,46 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="welcome-text">Welcome, admin!</div>
+<div class="page-title">Admin Dashboard</div>
+
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px;">
+    Schedule Management
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0; margin-bottom: 32px;">
+    <a href="{{ url_for('admin.create_class') }}" style="display: block; padding: 16px 24px; color: #3b82f6; text-decoration: none; border-bottom: 1px solid #e5e7eb; font-size: 16px;">
+        Create Class
+    </a>
+    <a href="{{ url_for('admin.add_students') }}" style="display: block; padding: 16px 24px; color: #3b82f6; text-decoration: none; border-bottom: 1px solid #e5e7eb; font-size: 16px;">
+        Add Students to Class
+    </a>
+    <a href="{{ url_for('admin.view_classes') }}" style="display: block; padding: 16px 24px; color: #3b82f6; text-decoration: none; font-size: 16px;">
+        View Classes, Subjects & Students
+    </a>
+</div>
+
+<!-- User Management Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px;">
+    User Management
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0; margin-bottom: 32px;">
+    <a href="{{ url_for('admin.users') }}" style="display: block; padding: 16px 24px; color: #3b82f6; text-decoration: none; border-bottom: 1px solid #e5e7eb; font-size: 16px;">
+        Add New Users
+    </a>
+    <a href="{{ url_for('admin.manage_users') }}" style="display: block; padding: 16px 24px; color: #3b82f6; text-decoration: none; font-size: 16px;">
+        Manage/Remove Users
+    </a>
+</div>
+
+<style>
+    a:hover {
+        background-color: #f8f9fa !important;
+        text-decoration: none !important;
+    }
+    
+    table tr:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}

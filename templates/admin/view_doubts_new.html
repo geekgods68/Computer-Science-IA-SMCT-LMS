@@ -1,0 +1,242 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Student Doubts & Questions</div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    <i class="bi bi-bar-chart"></i> All Student Doubts ({{ doubts_list|length }} total)
+</div>
+
+<!-- Filter Section -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <select id="statusFilter" style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="answered">Answered</option>
+            <option value="resolved">Resolved</option>
+        </select>
+        <input type="text" id="searchDoubts" style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Search doubts...">
+    </div>
+</div>
+
+{% if doubts_list %}
+<!-- Doubts Table Section -->
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;" id="doubtsTable">
+        <thead>
+            <tr style="background-color: #374151; color: white;">
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Student</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Class</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Subject</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Question</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Status</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Posted</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doubt in doubts_list %}
+            <tr style="border-bottom: 1px solid #e5e7eb; {{ 'background-color: #f8f9fa;' if loop.index % 2 == 1 }}" data-status="{{ doubt[5] or 'pending' }}">
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 500;"><i class="bi bi-person"></i> {{ doubt[1] }}</span>
+                    </div>
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if doubt[2] %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;"><i class="bi bi-book"></i> {{ doubt[2] }}</span>
+                    {% else %}
+                        <span style="color: #9ca3af;">General</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if doubt[3] %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ doubt[3] }}</span>
+                    {% else %}
+                        <span style="color: #9ca3af;">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ doubt[4] }}">
+                        {{ doubt[4] }}
+                    </div>
+                </td>
+                <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                    {% if doubt[5] == 'pending' %}
+                        <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">⏳ Pending</span>
+                    {% elif doubt[5] == 'answered' %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;"><i class="bi bi-chat"></i> Answered</span>
+                    {% elif doubt[5] == 'resolved' %}
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;"><i class="bi bi-check-circle"></i> Resolved</span>
+                    {% else %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Unknown</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if doubt[6] %}
+                        {{ doubt[6].split(' ')[0] }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td style="padding: 16px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="viewDoubt({{ doubt[0] }})" style="background-color: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        {% if doubt[5] != 'resolved' %}
+                        <button onclick="respondToDoubt({{ doubt[0] }})" style="background-color: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-chat"></i> Respond
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 48px; text-align: center;">
+    <div style="font-size: 4rem; margin-bottom: 16px; color: #9ca3af;"><i class="bi bi-question-circle"></i></div>
+    <div style="font-size: 18px; font-weight: 500; color: #374151; margin-bottom: 8px;">No student doubts found.</div>
+    <div style="color: #6b7280;">Student questions and doubts will appear here when submitted.</div>
+</div>
+{% endif %}
+
+<!-- Doubt Details Modal -->
+<div id="doubtModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; border-radius: 8px; padding: 24px; min-width: 500px; max-width: 80%; max-height: 80%; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 600; color: #3b82f6; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-question-circle"></i> Doubt Details
+            </h3>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <div style="font-weight: 500; margin-bottom: 8px;">Question:</div>
+            <div id="doubtQuestion" style="background-color: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #3b82f6;"></div>
+        </div>
+        <div style="margin-bottom: 24px;">
+            <div style="font-weight: 500; margin-bottom: 8px;">Respond to Doubt</div>
+            <form id="responseForm" method="POST" style="display: flex; flex-direction: column; gap: 12px;">
+                <textarea id="responseText" name="response" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical; min-height: 100px;" placeholder="Provide a helpful response to the student's question..."></textarea>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" onclick="closeDoubtModal()" style="background-color: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="background-color: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                        Send Response
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchDoubts');
+    const table = document.getElementById('doubtsTable');
+    
+    if (table) {
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        function filterTable() {
+            const statusValue = statusFilter.value.toLowerCase();
+            const searchValue = searchInput.value.toLowerCase();
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const status = row.getAttribute('data-status').toLowerCase();
+                const rowText = row.textContent.toLowerCase();
+                
+                const statusMatch = statusValue === '' || status.includes(statusValue);
+                const searchMatch = searchValue === '' || rowText.includes(searchValue);
+                
+                if (statusMatch && searchMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+
+        statusFilter.addEventListener('change', filterTable);
+        searchInput.addEventListener('input', filterTable);
+    }
+
+    // Add focus styles for form elements
+    const inputs = document.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+
+function viewDoubt(doubtId) {
+    // Show doubt details modal
+    document.getElementById('doubtModal').style.display = 'block';
+    // Here you would fetch and display the doubt details
+    // For now, just show a placeholder
+    document.getElementById('doubtQuestion').textContent = 'Loading doubt details...';
+}
+
+function respondToDoubt(doubtId) {
+    // Show response modal
+    document.getElementById('doubtModal').style.display = 'block';
+    // Set up the form to respond to this specific doubt
+    document.getElementById('responseForm').action = `/admin/respond_to_doubt/${doubtId}`;
+}
+
+function closeDoubtModal() {
+    document.getElementById('doubtModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('doubtModal');
+    if (event.target == modal) {
+        closeDoubtModal();
+    }
+}
+</script>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #9ca3af;
+}
+
+select:invalid {
+    color: #9ca3af;
+}
+
+select option {
+    color: #374151;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

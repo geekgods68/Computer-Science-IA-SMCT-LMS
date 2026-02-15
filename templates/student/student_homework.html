@@ -1,0 +1,261 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Homework - Student Portal{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <h2 class="page-title">
+        <i class="bi bi-file-earmark-text text-primary"></i>Homework & Assignments
+    </h2>
+    <p class="page-subtitle">View and download your assignments.</p>
+    
+    <!-- Assignment Filter -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                <select class="form-select" id="classFilter">
+                    <option value="">All Classes</option>
+                    {% for class in student_classes %}
+                    <option value="{{ class[0] }}">{{ class[1] }}{% if class[2] %} - Grade {{ class[2] }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Assignments</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments List -->
+    <div class="row">
+        <div class="col-12">
+            {% if homework_assignments %}
+                <div class="row" id="assignmentsList">
+                    {% for assignment in homework_assignments %}
+                    <div class="col-lg-6 col-xl-4 mb-4 assignment-card" data-class-id="{{ assignment.class_id }}">
+                        <div class="homework-card {% if assignment.is_overdue %}overdue{% elif assignment.days_until_due and assignment.days_until_due <= 3 %}due-soon{% else %}on-time{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="homework-title mb-0">
+                                    <i class="bi bi-file-earmark-text me-2"></i>{{ assignment.title }}
+                                </h5>
+                                <span class="homework-subject">{{ assignment.assignment_type|title }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-book me-1"></i>{{ assignment.class_name }}
+                                    {% if assignment.subject_name %}
+                                     - {{ assignment.subject_name }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            {% if assignment.description %}
+                            <p class="homework-description">{{ assignment.description[:100] }}{% if assignment.description|length > 100 %}...{% endif %}</p>
+                            {% endif %}
+                            
+                            <div class="homework-meta">
+                                <div>
+                                    <small class="text-muted d-block">Due Date</small>
+                                    <div class="due-date {% if assignment.is_overdue %}overdue{% elif assignment.days_until_due and assignment.days_until_due <= 3 %}due-soon{% else %}on-time{% endif %}">
+                                        {% if assignment.due_date %}
+                                            {{ assignment.due_date.strftime('%b %d, %Y') }}<br>
+                                            <small>{{ assignment.due_date.strftime('%I:%M %p') }}</small>
+                                        {% else %}
+                                            No deadline
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Points</small>
+                                    <strong class="text-success">{{ assignment.points }}</strong>
+                                </div>
+                            </div>
+                            
+                            {% if assignment.teacher_name %}
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>{{ assignment.teacher_name }}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if assignment.is_overdue %}
+                            <div class="alert alert-danger alert-sm mb-3">
+                                <i class="bi bi-exclamation-triangle me-1"></i>This assignment is overdue!
+                            </div>
+                            {% elif assignment.days_until_due and assignment.days_until_due <= 3 %}
+                            <div class="alert alert-warning alert-sm mb-3">
+                                <i class="bi bi-clock me-1"></i>Due in {{ assignment.days_until_due }} day{{ assignment.days_until_due|pluralize }}!
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('student.download_assignment', assignment_id=assignment.id) }}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-download me-2"></i>Download Assignment
+                                </a>
+                                <button class="btn btn-success btn-sm" onclick="submitAssignment({{ assignment.id }})">
+                                    <i class="bi bi-upload me-2"></i>Submit Work
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state-dashed">
+                    <div class="empty-state-icon large">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h5 class="empty-state-title">No Assignments Available</h5>
+                    <p class="empty-state-text muted">
+                        You don't have any assignments at the moment.<br>
+                        Check back later or contact your teacher.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Class filter functionality
+    document.getElementById('classFilter').addEventListener('change', function() {
+        const selectedClassId = this.value;
+        const assignmentCards = document.querySelectorAll('.assignment-card');
+        
+        assignmentCards.forEach(card => {
+            if (selectedClassId === '' || card.dataset.classId === selectedClassId) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Status filter functionality
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        const selectedStatus = this.value;
+        const assignmentCards = document.querySelectorAll('.assignment-card');
+        
+        assignmentCards.forEach(card => {
+            const cardElement = card.querySelector('.homework-card');
+            let show = true;
+            
+            if (selectedStatus === 'overdue') {
+                show = cardElement.classList.contains('overdue');
+            } else if (selectedStatus === 'upcoming') {
+                show = cardElement.classList.contains('due-soon') || cardElement.classList.contains('on-time');
+            } else if (selectedStatus === 'completed') {
+                // For now, assume no assignments are completed (we'd need submission tracking)
+                show = false;
+            }
+            
+            card.style.display = show ? 'block' : 'none';
+        });
+    });
+
+    // Submit assignment function
+    function submitAssignment(assignmentId) {
+        // Create and show file upload modal
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-upload me-2"></i>Submit Assignment
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="submitForm" enctype="multipart/form-data">
+                            <input type="hidden" name="assignment_id" value="${assignmentId}">
+                            <div class="mb-3">
+                                <label for="submission_file" class="form-label">Choose File to Submit</label>
+                                <input type="file" class="form-control" id="submission_file" name="submission_file" 
+                                       accept=".pdf,.doc,.docx,.txt,.zip,.rar" required>
+                                <div class="form-text">Accepted formats: PDF, DOC, DOCX, TXT, ZIP, RAR (Max 25MB)</div>
+                            </div>
+                            <div id="uploadStatus" class="mt-3"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" onclick="uploadSubmission()">
+                            <i class="bi bi-upload me-1"></i>Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Clean up modal after hiding
+        modal.addEventListener('hidden.bs.modal', function() {
+            modal.remove();
+        });
+    }
+
+    // Upload submission function
+    function uploadSubmission() {
+        const form = document.getElementById('submitForm');
+        const formData = new FormData(form);
+        const statusDiv = document.getElementById('uploadStatus');
+        
+        // Check if file is selected
+        const fileInput = document.getElementById('submission_file');
+        if (!fileInput.files.length) {
+            statusDiv.innerHTML = '<div class="alert alert-warning">Please select a file to upload.</div>';
+            return;
+        }
+        
+        // Show loading status
+        statusDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split me-2"></i>Uploading...</div>';
+        
+        // Disable submit button
+        const submitBtn = document.querySelector('.modal-footer .btn-success');
+        submitBtn.disabled = true;
+        
+        fetch('/student/upload_submission', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>' + data.message + '</div>';
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
+                    modal.hide();
+                    // Optionally refresh the page to show updated status
+                    location.reload();
+                }, 2000);
+            } else {
+                statusDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + data.message + '</div>';
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Upload failed: ' + error.message + '</div>';
+            submitBtn.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

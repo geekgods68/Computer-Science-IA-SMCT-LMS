@@ -1,0 +1,94 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Portal{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="welcome-title">Welcome to Your Student Dashboard!</h2>
+            <p class="welcome-subtitle">Access all your academic resources and tools from here.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="feature-icon blue">
+                <i class="bi bi-mortarboard-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feature Cards -->
+<div class="row">
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="feature-card text-center p-4">
+            <div class="feature-icon blue mx-auto">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            <h5 class="feature-title">My Classes</h5>
+            <p class="feature-description">View your enrolled classes, subjects, and schedules.</p>
+            <a href="{{ url_for('student.classes') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-right me-2"></i>View Classes
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="feature-card text-center p-4">
+            <div class="feature-icon green mx-auto">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <h5 class="feature-title">Homework</h5>
+            <p class="feature-description">Download assignments and upload your completed work.</p>
+            <a href="{{ url_for('student.homework') }}" class="btn btn-primary">
+                <i class="bi bi-download me-1"></i>View Assignments
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="feature-card text-center p-4">
+            <div class="feature-icon orange mx-auto">
+                <i class="bi bi-question-circle"></i>
+            </div>
+            <h5 class="feature-title">Ask Doubts</h5>
+            <p class="feature-description">Post your academic questions for teachers to answer.</p>
+            <a href="{{ url_for('student.doubts') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Post New Doubt
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="feature-card text-center p-4">
+            <div class="feature-icon red mx-auto">
+                <i class="bi bi-megaphone"></i>
+            </div>
+            <h5 class="feature-title">Announcements</h5>
+            <p class="feature-description">View important announcements and updates from school.</p>
+            <a href="{{ url_for('student.announcements') }}" class="btn btn-primary">
+                <i class="bi bi-eye me-2"></i>View Announcements
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Section -->
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="feature-card p-4">
+            <div class="row align-items-center">
+                <div class="col-8">
+                    <h5 class="feature-title">Anonymous Feedback</h5>
+                    <p class="feature-description small">Share your thoughts and suggestions anonymously to help us improve.</p>
+                </div>
+                <div class="col-4 text-end">
+                    <a href="{{ url_for('student.feedback') }}" class="btn btn-primary">
+                        <i class="bi bi-chat-dots me-2"></i>Give Feedback
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Classes - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}"><i class="bi bi-person-workspace"></i> Teacher Portal</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h2 class="card-title text-primary">
+                            <i class="bi bi-journal-bookmark"></i> My Assigned Classes
+                        </h2>
+                        <p class="card-text">View and manage your assigned classes and subjects.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes Grid -->
+        <div class="row g-4">
+            {% if teacher_classes %}
+                {% for class in teacher_classes %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-book"></i> {{ class[1].strip() }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {% if class[4] %}Grade: {{ class[4] }}{% endif %}
+                                {% if class[2] %} | Type: {{ class[2].title() }}{% endif %}
+                            </h6>
+                            <div class="mb-3">
+                                <strong>Description:</strong>
+                                <p class="text-muted small">{{ class[3] or 'No description available' }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Schedule:</strong>
+                                {% if class[5] and class[6] %}
+                                    <p class="text-muted small">{{ class[5] }} - {{ class[6] }}</p>
+                                {% else %}
+                                    <p class="text-muted small">Schedule not set</p>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <strong>Total Students:</strong> <span class="badge bg-info">{{ class[8] or 0 }}</span>
+                            </div>
+                            {% if class[7] %}
+                            <div class="mb-3">
+                                <strong>Meeting Link:</strong>
+                                <a href="{{ class[7] }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-camera-video"></i> Join Meeting
+                                </a>
+                            </div>
+                            {% endif %}
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="showStudentList({{ class[0] }}, '{{ class[1].strip() }}')">
+                                    <i class="bi bi-people"></i> Student List
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="bi bi-journal-bookmark text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">No Classes Assigned</h4>
+                        <p class="text-muted">You haven't been assigned to any classes yet. Please contact the admin for class assignments.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Subject Summary -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Subject Teaching Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if teacher_subjects %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Classes</th>
+                                            <th>Total Students</th>
+                                            <th>Pending Assignments</th>
+                                            <th>Ungraded Submissions</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for subject in teacher_subjects %}
+                                        <tr>
+                                            <td><strong>{{ subject.subject_name }}</strong></td>
+                                            <td>{{ subject.classes_taught or 'No classes' }}</td>
+                                            <td>{{ subject.total_students or 0 }}</td>
+                                            <td><span class="badge bg-warning">{{ subject.pending_assignments or 0 }}</span></td>
+                                            <td><span class="badge bg-danger">{{ subject.ungraded_submissions or 0 }}</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Manage
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-journal-text text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No Subjects Assigned</h5>
+                                <p class="text-muted">You haven't been assigned to teach any subjects yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student List Modal -->
+    <div class="modal fade" id="studentListModal" tabindex="-1" aria-labelledby="studentListModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentListModalLabel">
+                        <i class="bi bi-people"></i> Student List
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="studentListContent">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading student list...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStudentList(classId, className) {
+            // Set modal title
+            document.getElementById('studentListModalLabel').innerHTML = 
+                '<i class="bi bi-people"></i> Students in ' + className;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('studentListModal'));
+            modal.show();
+            
+            // Reset content
+            document.getElementById('studentListContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading student list...</p>
+                </div>
+            `;
+            
+            // Fetch student list
+            fetch('/teacher/get_class_students/' + classId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.students.length === 0) {
+                            document.getElementById('studentListContent').innerHTML = `
+                                <div class="text-center py-4">
+                                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-3">No Students Enrolled</h5>
+                                    <p class="text-muted">No students are currently enrolled in this class.</p>
+                                </div>
+                            `;
+                        } else {
+                            let studentListHTML = `
+                                <div class="mb-3">
+                                    <h6 class="text-primary">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Total Students: <span class="badge bg-primary">${data.students.length}</span>
+                                    </h6>
+                                </div>
+                                <div class="list-group">
+                            `;
+                            
+                            data.students.forEach((student, index) => {
+                                studentListHTML += `
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-secondary me-2">${index + 1}</span>
+                                            <strong>${student.name || 'Unnamed Student'}</strong>
+                                            <small class="text-muted d-block">Username: ${student.username}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">ID: ${student.id}</small>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            studentListHTML += '</div>';
+                            document.getElementById('studentListContent').innerHTML = studentListHTML;
+                        }
+                    } else {
+                        document.getElementById('studentListContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Error loading student list: ${data.message || 'Unknown error'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('studentListContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Error loading student list. Please try again later.
+                        </div>
+                    `;
+                });
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

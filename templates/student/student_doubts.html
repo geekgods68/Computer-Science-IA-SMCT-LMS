@@ -1,0 +1,168 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Doubts - Student Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .teacher-replies {
+        border-top: 2px solid #e9ecef;
+        padding-top: 15px;
+        margin-top: 15px;
+    }
+    
+    .reply-item {
+        margin-left: 20px;
+    }
+    
+    .reply-content {
+        border-left: 4px solid #28a745;
+        position: relative;
+    }
+    
+    .reply-content::before {
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 15px;
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-right: 8px solid #f8f9fa;
+    }
+    
+    .alert-sm {
+        padding: 8px 12px;
+        font-size: 0.875rem;
+    }
+    
+    .doubt-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        background: #fff;
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .doubt-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-title">
+        <i class="bi bi-question-circle"></i>
+        <span>Ask Doubts</span>
+    </div>
+    <p class="page-subtitle">Post your academic questions for teachers to answer.</p>
+    
+    <!-- Submit New Doubt Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-plus-circle me-2"></i>Post New Doubt
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('student.doubts') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            <option value="Math">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="English">English</option>
+                            <option value="History">History</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="doubt_text" class="form-label">Your Question</label>
+                    <textarea class="form-control" id="doubt_text" name="doubt_text" rows="4" 
+                              placeholder="Describe your question or doubt in detail..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-2"></i>Submit Doubt
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Previous Doubts -->
+    <h5 class="mb-3">My Previous Doubts</h5>
+    
+    {% if doubts %}
+        <div class="row">
+            {% for doubt in doubts %}
+            <div class="col-12 mb-3">
+                <div class="doubt-card">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0 text-primary">{{ doubt.subject }}</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if doubt.replies %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-chat-dots me-1"></i>{{ doubt.replies|length }} Reply{{ 'ies' if doubt.replies|length > 1 else '' }}
+                                </span>
+                            {% endif %}
+                            <span class="badge bg-{{ 'success' if doubt.status == 'resolved' else 'warning' if doubt.status == 'open' else 'secondary' }}">
+                                {{ doubt.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="doubt-content mb-2">
+                        <strong>Your Question:</strong>
+                        <p class="mb-2">{{ doubt.doubt_text }}</p>
+                    </div>
+                    <div class="doubt-meta mb-3">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-event me-1"></i>Submitted on {{ doubt.submitted_on }}
+                        </small>
+                    </div>
+                    
+                    <!-- Teacher Replies Section -->
+                    {% if doubt.replies %}
+                        <div class="teacher-replies">
+                            <h6 class="text-success mb-2">
+                                <i class="bi bi-chat-dots me-1"></i>Teacher Response{{ 's' if doubt.replies|length > 1 else '' }}
+                            </h6>
+                            {% for reply in doubt.replies %}
+                                <div class="reply-item mb-3">
+                                    <div class="reply-content bg-light p-3 rounded">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <strong class="text-success">{{ reply.teacher_name }}</strong>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>{{ reply.created_at }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0">{{ reply.reply_text }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {% if doubt.status == 'open' %}
+                            <div class="alert alert-info alert-sm">
+                                <i class="bi bi-hourglass-split me-1"></i>
+                                Waiting for teacher response...
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-dashed">
+            <div class="empty-state-icon large">
+                <i class="bi bi-question-circle-fill"></i>
+            </div>
+            <h4 class="empty-state-title">No Doubts Yet</h4>
+            <p class="empty-state-text">You haven't posted any doubts. Use the form above to ask your first question!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

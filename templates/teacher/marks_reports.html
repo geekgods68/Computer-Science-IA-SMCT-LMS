@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marks Reports - Teacher Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .grade-badge {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .grade-A, .grade-A\+ { background-color: #d4edda; color: #155724; }
+        .grade-B, .grade-B\+ { background-color: #cce7ff; color: #0056b3; }
+        .grade-C { background-color: #fff3cd; color: #856404; }
+        .grade-D { background-color: #f8d7da; color: #721c24; }
+        .grade-F { background-color: #dc3545; color: white; }
+        .stats-card {
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .stats-card.excellent { border-left-color: #28a745; }
+        .stats-card.good { border-left-color: #17a2b8; }
+        .stats-card.average { border-left-color: #ffc107; }
+        .stats-card.needs-improvement { border-left-color: #dc3545; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}">
+                <i class="bi bi-person-workspace"></i> Teacher Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.marks_roster') }}">
+                    <i class="bi bi-clipboard-data"></i> Marks View
+                </a>
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="text-success">
+                        <i class="bi bi-bar-chart-line"></i> Marks Reports & Analytics
+                    </h2>
+                    <div>
+                        <a href="{{ url_for('teacher.marks_roster') }}" class="btn btn-outline-success me-2">
+                            <i class="bi bi-clipboard-data"></i> Marks View
+                        </a>
+                        {% if selected_class_id %}
+                        <a href="{{ url_for('teacher.generate_report', class_id=selected_class_id) }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-file-text"></i> Generate Report
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Class Selection -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Select Class for Reports</h5>
+                        <form method="GET" class="row g-3">
+                            <input type="hidden" name="view" value="reports">
+                            <div class="col-md-6">
+                                <select name="class_id" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Select a class...</option>
+                                    {% for class in classes %}
+                                    <option value="{{ class.id }}" 
+                                            {{ 'selected' if class.id == selected_class_id }}>
+                                        {{ class.name }} - {{ class.subject }} (Grade {{ class.grade_level }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {% if selected_class_id and assignments %}
+                    {% set total_students = students_data|length %}
+                    {% set graded_students = students_data|selectattr('total_possible', '>', 0)|list %}
+                    {% set class_avg = (graded_students|sum(attribute='percentage') / graded_students|length) if graded_students else 0 %}
+                    
+                    <!-- Overview Statistics -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card stats-card excellent h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-people text-success fs-1"></i>
+                                    <h3 class="text-success">{{ total_students }}</h3>
+                                    <p class="mb-0">Total Students</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stats-card good h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-clipboard-check text-info fs-1"></i>
+                                    <h3 class="text-info">{{ assignments|length }}</h3>
+                                    <p class="mb-0">Assignments</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card stats-card {{ 'excellent' if class_avg >= 80 else ('good' if class_avg >= 70 else ('average' if class_avg >= 60 else 'needs-improvement')) }} h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up fs-1 {{ 'text-success' if class_avg >= 80 else ('text-info' if class_avg >= 70 else ('text-warning' if class_avg >= 60 else 'text-danger')) }}"></i>
+                                    <h3 class="{{ 'text-success' if class_avg >= 80 else ('text-info' if class_avg >= 70 else ('text-warning' if class_avg >= 60 else 'text-danger')) }}">
+                                        {{ "%.1f"|format(class_avg) }}%
+                                    </h3>
+                                    <p class="mb-0">Class Average</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            {% set graded_count = graded_students|length %}
+                            <div class="card stats-card {{ 'excellent' if graded_count == total_students else ('good' if graded_count > total_students * 0.8 else ('average' if graded_count > total_students * 0.5 else 'needs-improvement')) }} h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-check-circle fs-1 {{ 'text-success' if graded_count == total_students else ('text-info' if graded_count > total_students * 0.8 else ('text-warning' if graded_count > total_students * 0.5 else 'text-danger')) }}"></i>
+                                    <h3 class="{{ 'text-success' if graded_count == total_students else ('text-info' if graded_count > total_students * 0.8 else ('text-warning' if graded_count > total_students * 0.5 else 'text-danger')) }}">
+                                        {{ graded_count }}/{{ total_students }}
+                                    </h3>
+                                    <p class="mb-0">Students Graded</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grade Distribution Chart -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-pie-chart"></i> Grade Distribution
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="gradeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance by Assignment -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-graph-up"></i> Performance by Assignment
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="assignmentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Performance Table -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-table"></i> Student Performance Summary
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped mb-0">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Student</th>
+                                            <th class="text-center">Assignments Completed</th>
+                                            <th class="text-center">Total Marks</th>
+                                            <th class="text-center">Percentage</th>
+                                            <th class="text-center">Grade</th>
+                                            <th class="text-center">Performance</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students_data|sort(attribute='percentage', reverse=true) %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ student.name }}</strong><br>
+                                                <small class="text-muted">{{ student.username }}</small>
+                                            </td>
+                                            <td class="text-center">
+                                                {% set completed = student.marks.values()|selectattr('obtained', 'ne', none)|list|length %}
+                                                <span class="badge {{ 'bg-success' if completed == assignments|length else ('bg-warning' if completed > 0 else 'bg-secondary') }}">
+                                                    {{ completed }}/{{ assignments|length }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong>{{ student.total_obtained }}/{{ student.total_possible }}</strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong class="{{ 'text-success' if student.percentage >= 80 else ('text-info' if student.percentage >= 70 else ('text-warning' if student.percentage >= 60 else 'text-danger')) }}">
+                                                    {{ student.percentage }}%
+                                                </strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="grade-badge grade-{{ student.grade }}">{{ student.grade }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if student.percentage >= 90 %}
+                                                <span class="badge bg-success">Excellent</span>
+                                                {% elif student.percentage >= 80 %}
+                                                <span class="badge bg-info">Good</span>
+                                                {% elif student.percentage >= 70 %}
+                                                <span class="badge bg-warning">Satisfactory</span>
+                                                {% elif student.percentage >= 60 %}
+                                                <span class="badge bg-primary">Pass</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Needs Help</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('teacher.mark_student', student_id=student.id, class_id=selected_class_id) }}" 
+                                                   class="btn btn-sm btn-primary me-1" 
+                                                   title="View/Edit marks for {{ student.name }}">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{{ url_for('teacher.generate_student_report', student_id=student.id, class_id=selected_class_id) }}" 
+                                                   class="btn btn-sm btn-info" 
+                                                   title="Generate report for {{ student.name }}">
+                                                    <i class="bi bi-file-text"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assignment Statistics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clipboard-data"></i> Assignment Statistics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for assignment in assignments %}
+                                    {% set assignment_marks = students_data|map(attribute='marks')|map('get', assignment.id)|selectattr('obtained', 'ne', none)|list %}
+                                    {% set assignment_avg = (assignment_marks|sum(attribute='obtained') / assignment_marks|length) if assignment_marks else 0 %}
+                                    {% set completion_rate = (assignment_marks|length / students_data|length * 100) if students_data else 0 %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">{{ assignment.title }}</h6>
+                                            <small class="text-muted">{{ assignment.type.title() }}</small>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <h6 class="text-primary">{{ "%.1f"|format(assignment_avg) }}/{{ assignment.total_marks }}</h6>
+                                                    <small>Average Score</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <h6 class="text-info">{{ "%.0f"|format(completion_rate) }}%</h6>
+                                                    <small>Completion</small>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: {{ completion_rate }}%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                {% elif selected_class_id and not assignments %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No assignments found for this class. 
+                    <a href="{{ url_for('teacher.my_assignments') }}" class="alert-link">Create an assignment</a> first.
+                </div>
+                
+                {% elif not selected_class_id and classes %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Please select a class to view reports.
+                </div>
+                
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No classes assigned to you yet. 
+                    Contact your administrator to get class assignments.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% if selected_class_id and assignments and students_data %}
+    <script>
+        // Grade Distribution Chart
+        const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+        const gradeData = {
+            'A': {{ students_data|selectattr('grade', 'in', ['A+', 'A'])|list|length }},
+            'B': {{ students_data|selectattr('grade', 'in', ['B+', 'B'])|list|length }},
+            'C': {{ students_data|selectattr('grade', 'eq', 'C')|list|length }},
+            'D': {{ students_data|selectattr('grade', 'eq', 'D')|list|length }},
+            'F': {{ students_data|selectattr('grade', 'eq', 'F')|list|length }}
+        };
+
+        new Chart(gradeCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(gradeData),
+                datasets: [{
+                    data: Object.values(gradeData),
+                    backgroundColor: [
+                        '#28a745', // A - Green
+                        '#17a2b8', // B - Blue
+                        '#ffc107', // C - Yellow
+                        '#fd7e14', // D - Orange
+                        '#dc3545'  // F - Red
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Grade Distribution'
+                    }
+                }
+            }
+        });
+
+        // Assignment Performance Chart
+        const assignmentCtx = document.getElementById('assignmentChart').getContext('2d');
+        const assignmentLabels = {{ assignments|map(attribute='title')|list|tojson }};
+        const assignmentAverages = [
+            {% for assignment in assignments %}
+                {% set assignment_marks = students_data|map(attribute='marks')|map('get', assignment.id)|selectattr('obtained', 'ne', none)|list %}
+                {% set assignment_avg = (assignment_marks|sum(attribute='obtained') / assignment_marks|length) if assignment_marks else 0 %}
+                {{ "%.2f"|format((assignment_avg / assignment.total_marks) * 100) }}{{ "," if not loop.last }}
+            {% endfor %}
+        ];
+
+        new Chart(assignmentCtx, {
+            type: 'bar',
+            data: {
+                labels: assignmentLabels,
+                datasets: [{
+                    label: 'Average Percentage',
+                    data: assignmentAverages,
+                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Average Performance by Assignment'
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

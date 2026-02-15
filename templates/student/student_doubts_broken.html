@@ -1,0 +1,234 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Doubts - Student Portal{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="page-title">
+        <i class="bi bi-question-circle"></i>
+        <span>Ask Doubts</span>
+    </div>
+    <p class="page-subtitle">Post your academic questions for teachers to answer.</p>
+    
+    <!-- Submit New Doubt Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-plus-circle me-2"></i>Post New Doubt
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('student.doubts') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            <option value="Math">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="English">English</option>
+                            <option value="History">History</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="doubt_text" class="form-label">Your Question</label>
+                    <textarea class="form-control" id="doubt_text" name="doubt_text" rows="4" 
+                              placeholder="Describe your question or doubt in detail..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-2"></i>Submit Doubt
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Previous Doubts -->
+    <h5 class="mb-3">My Previous Doubts</h5>
+    
+    {% if doubts %}
+        {% for doubt in doubts %}
+        <div class="doubt-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <span class="doubt-subject">{{ doubt.subject }}</span>
+                    <span class="ms-2 badge {% if doubt.status == 'resolved' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {{ doubt.status|title }}
+                    </span>
+                </div>
+                <small class="text-muted">{{ doubt.submitted_on }}</small>
+            </div>
+            
+            <div class="doubt-content mb-3">
+                <strong>Question:</strong>
+                <p class="mb-0">{{ doubt.doubt_text }}</p>
+            </div>
+            
+            {% if doubt.status == 'resolved' and doubt.resolved_on %}
+            <div class="alert alert-success">
+                <strong>Resolved on:</strong> {{ doubt.resolved_on }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-question-circle"></i>
+            </div>
+            <h4 class="empty-state-title">No Doubts Yet</h4>
+            <p class="empty-state-text">You haven't posted any doubts. Use the form above to ask your first question!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+        }
+        
+        .doubt-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .bottom-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #007bff;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .bottom-nav-item {
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            padding: 5px;
+        }
+        
+        .bottom-nav-item:hover {
+            color: #cce7ff;
+            text-decoration: none;
+        }
+        
+        .bottom-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="{{ url_for('student.dashboard') }}">
+                <i class="bi bi-mortarboard-fill me-2"></i>Student Portal
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4">
+        <div class="main-content">
+            <h2 class="page-title">
+                <i class="bi bi-question-circle text-warning"></i>Ask Doubts
+            </h2>
+            <p class="page-subtitle">Post your academic questions for teachers to answer.</p>
+            
+            <!-- Post New Doubt Form -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Post New Doubt</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">Subject</label>
+                                    <select class="form-select" id="subject" name="subject" required>
+                                        <option value="">Select Subject</option>
+                                        <option value="Math">Math</option>
+                                        <option value="Science">Science</option>
+                                        <option value="English">English</option>
+                                        <option value="Social Science">Social Science</option>
+                                        <option value="Hindi">Hindi</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="doubt_text" class="form-label">Your Doubt</label>
+                                    <textarea class="form-control" id="doubt_text" name="doubt_text" rows="4" 
+                                              placeholder="Describe your question or doubt in detail..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-send me-2"></i>Submit Doubt
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- My Doubts -->
+            <h5 class="mb-3">
+                <i class="bi bi-list me-2 text-primary"></i>My Doubts
+            </h5>
+            
+            {% if doubts %}
+                {% for doubt in doubts %}
+                <div class="doubt-card">
+                    <div class="doubt-header">
+                        <span class="doubt-subject">{{ doubt.subject }}</span>
+                        <span class="doubt-status {% if doubt.status == 'open' %}status-open{% else %}status-answered{% endif %}">
+                            {{ doubt.status.title() }}
+                        </span>
+                    </div>
+                    <div class="doubt-text">
+                        {{ doubt.doubt_text }}
+                    </div>
+                    <div class="doubt-date">
+                        <i class="bi bi-calendar3 me-1"></i>{{ doubt.submitted_on if doubt.submitted_on else 'Recently' }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-question-circle"></i>
+                    </div>
+                    <h5 class="empty-state-title">No doubts posted yet</h5>
+                    <p class="empty-state-text">Post your first doubt using the form above!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-navbar">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col text-center">
+                    <a href="{{ url_for('student.dashboard') }}" class="bottom-nav-item">
+                        <i class="bi bi-house-door"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="col text-center">
+                    <a href="{{ url_for('auth.logout') }}" class="bottom-nav-item">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

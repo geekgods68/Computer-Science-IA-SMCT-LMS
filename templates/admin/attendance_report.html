@@ -1,0 +1,202 @@
+{% extends "admin/sidebar.html" %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Attendance Report</div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('admin.attendance') }}" style="background-color: #6b7280; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            ← Back to Attendance
+        </a>
+        <button onclick="window.print()" style="background-color: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            🖨️ Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="background-color: {{ '#fee2e2' if category == 'error' else '#d1fae5' }}; border: 1px solid {{ '#f87171' if category == 'error' else '#10b981' }}; border-radius: 8px; padding: 16px; margin-bottom: 16px; color: {{ '#dc2626' if category == 'error' else '#065f46' }};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Filters Section -->
+<div style="background-color: #6b7280; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    🔍 Report Filters
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <form method="GET" action="{{ url_for('admin.attendance_report') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 24px; align-items: end;">
+            <div>
+                <label for="class_id" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Class</label>
+                <select name="class_id" id="class_id" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                    <option value="">All Classes</option>
+                    {% for class_info in classes %}
+                    <option value="{{ class_info[0] }}" 
+                            {% if filters.class_id == class_info[0]|string %}selected{% endif %}>
+                        {{ class_info[2] }} - {{ class_info[1] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="start_date" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">Start Date</label>
+                <input type="date" name="start_date" id="start_date" 
+                       style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" 
+                       value="{{ filters.start_date or '' }}">
+            </div>
+            <div>
+                <label for="end_date" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">End Date</label>
+                <input type="date" name="end_date" id="end_date" 
+                       style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" 
+                       value="{{ filters.end_date or '' }}">
+            </div>
+            <div>
+                <button type="submit" style="background-color: #3b82f6; color: white; border: none; padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%;">
+                    🔍 Generate Report
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Report Results Section -->
+<div style="background-color: #374151; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    📊 Attendance Summary
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px;">
+    {% if report_data %}
+    <!-- Summary Stats -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+        <div style="background-color: #3b82f6; color: white; border-radius: 8px; padding: 24px; text-align: center;">
+            <h4 style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">{{ report_data|length }}</h4>
+            <p style="margin: 0; font-size: 14px;">Total Students</p>
+        </div>
+        <div style="background-color: #10b981; color: white; border-radius: 8px; padding: 24px; text-align: center;">
+            <h4 style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">{{ "%.1f"|format((report_data|sum(attribute=8) / report_data|length) if report_data else 0) }}%</h4>
+            <p style="margin: 0; font-size: 14px;">Average Attendance</p>
+        </div>
+        <div style="background-color: #06b6d4; color: white; border-radius: 8px; padding: 24px; text-align: center;">
+            <h4 style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">{{ report_data|sum(attribute=4) }}</h4>
+            <p style="margin: 0; font-size: 14px;">Total Present Days</p>
+        </div>
+        <div style="background-color: #f59e0b; color: white; border-radius: 8px; padding: 24px; text-align: center;">
+            <h4 style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">{{ report_data|sum(attribute=5) }}</h4>
+            <p style="margin: 0; font-size: 14px;">Total Absent Days</p>
+        </div>
+    </div>
+
+    <!-- Detailed Report Table -->
+    <div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #374151; color: white;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Student Name</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Class</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Total Days</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Present</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Absent</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Late</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Excused</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Attendance %</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in report_data %}
+                <tr style="border-bottom: 1px solid #e5e7eb; {{ 'background-color: #f8f9fa;' if loop.index % 2 == 1 }}">
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;"><strong>{{ record[0] }}</strong></td>
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[2] }} - {{ record[1] }}</td>
+                    <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">{{ record[3] }}</td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ record[4] }}</span>
+                    </td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ record[5] }}</span>
+                    </td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ record[6] }}</span>
+                    </td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ record[7] }}</span>
+                    </td>
+                    <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                        <strong style="color: {% if record[8] >= 90 %}#10b981{% elif record[8] >= 75 %}#f59e0b{% else %}#ef4444{% endif %};">{{ record[8] }}%</strong>
+                    </td>
+                    <td style="padding: 16px;">
+                        {% if record[8] >= 90 %}
+                            <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Excellent</span>
+                        {% elif record[8] >= 75 %}
+                            <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Good</span>
+                        {% elif record[8] >= 60 %}
+                            <span style="background-color: #06b6d4; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Average</span>
+                        {% else %}
+                            <span style="background-color: #ef4444; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Poor</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 48px; text-align: center; color: #6b7280;">
+        <div style="font-size: 48px; margin-bottom: 16px;">📈</div>
+        <h5 style="color: #374151; margin-bottom: 8px;">No attendance data found</h5>
+        <p style="margin-bottom: 0;">Try adjusting your filters or add some attendance records first.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@media print {
+    button, .navbar, .sidebar {
+        display: none !important;
+    }
+    
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    table {
+        font-size: 12px;
+    }
+    
+    /* Print-specific table styling */
+    th {
+        background-color: #374151 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+</style>
+
+<script>
+// Set default date range (last 30 days) if not set
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    
+    if (!startDate.value && !endDate.value) {
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+        
+        startDate.value = thirtyDaysAgo.toISOString().split('T')[0];
+        endDate.value = today.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

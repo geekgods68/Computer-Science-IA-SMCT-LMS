@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Communication - Teacher Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .page-title {
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+            margin-right: 5px;
+            border-radius: 8px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .announcement-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .announcement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .announcement-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .announcement-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .priority-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+        
+        .priority-high { background-color: #dc3545; }
+        .priority-medium { background-color: #ffc107; color: #000; }
+        .priority-normal { background-color: #28a745; }
+        
+        .announcement-content {
+            color: #495057;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .announcement-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: end;
+        }
+        
+        .create-form {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .create-form:focus-within {
+            border-color: #28a745;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('teacher.dashboard') }}">
+                <i class="bi bi-mortarboard me-2"></i>Teacher Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('teacher.dashboard') }}">
+                    <i class="bi bi-house me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="content-card">
+            <h2 class="page-title">
+                <i class="bi bi-megaphone"></i>Communication
+            </h2>
+            
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if view != 'all' else '' }}" 
+                       href="{{ url_for('teacher.my_announcements') }}">
+                        <i class="bi bi-plus me-1"></i>Create Announcement
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if view == 'all' else '' }}" 
+                       href="{{ url_for('teacher.my_announcements', view='all') }}">
+                        <i class="bi bi-list me-1"></i>View All
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Create Announcement Form -->
+            {% if view != 'all' %}
+            <div class="create-form">
+                <h5 class="mb-3">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Announcement
+                </h5>
+                
+                <form method="POST" action="{{ url_for('teacher.create_announcement') }}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="Enter announcement title">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="normal">Normal</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="target_audience" class="form-label">Target Audience</label>
+                                <select class="form-select" id="target_audience" name="target_audience" onchange="toggleClassSelection()">
+                                    <option value="class">Specific Class</option>
+                                    <option value="all">All My Classes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6" id="class-selection">
+                            <div class="mb-3">
+                                <label for="class_id" class="form-label">Select Class</label>
+                                <select class="form-select" id="class_id" name="class_id">
+                                    <option value="">Choose a class...</option>
+                                    {% for class in classes %}
+                                    <option value="{{ class[0] }}">
+                                        {{ class[1] }}
+                                        {% if class[2] %} - Grade {{ class[2] }}{% endif %}
+                                        ({{ class[4] }} students)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Message Content *</label>
+                        <textarea class="form-control" id="content" name="content" rows="5" required 
+                                  placeholder="Enter your announcement message here..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                            <i class="bi bi-x-circle me-1"></i>Clear
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send me-1"></i>Send Announcement
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            
+            <!-- View All Announcements -->
+            {% if view == 'all' %}
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>
+                        <i class="bi bi-list-ul me-2"></i>Your Announcements
+                    </h5>
+                    <small class="text-muted">{{ announcements|length }} announcements</small>
+                </div>
+                
+                {% if announcements %}
+                    {% for announcement in announcements %}
+                    <div class="announcement-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="announcement-title">{{ announcement[1] }}</h6>
+                            <div class="d-flex gap-2 align-items-center">
+                                <span class="badge priority-{{ announcement[3] }} priority-badge">
+                                    {{ announcement[3].title() }} Priority
+                                </span>
+                                {% if announcement[5] %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="announcement-meta">
+                            <div>
+                                <i class="bi bi-calendar"></i>
+                                {{ announcement[4][:16] }}
+                            </div>
+                            <div>
+                                <i class="bi bi-people"></i>
+                                {% if announcement[6] == 'all' %}
+                                    All Classes
+                                {% elif announcement[7] %}
+                                    {{ announcement[7] }}
+                                {% else %}
+                                    Specific Class
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="announcement-content">
+                            {{ announcement[2] }}
+                        </div>
+                        
+                        <div class="announcement-actions">
+                            <a href="{{ url_for('teacher.toggle_announcement', announcement_id=announcement[0]) }}" 
+                               class="btn btn-sm btn-outline-{{ 'secondary' if announcement[5] else 'success' }}">
+                                <i class="bi bi-{{ 'pause' if announcement[5] else 'play' }}"></i>
+                                {{ 'Deactivate' if announcement[5] else 'Activate' }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-megaphone" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">No Announcements Yet</h5>
+                        <p>You haven't created any announcements yet.</p>
+                        <a href="{{ url_for('teacher.my_announcements') }}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-2"></i>Create Your First Announcement
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleClassSelection() {
+            const targetAudience = document.getElementById('target_audience').value;
+            const classSelection = document.getElementById('class-selection');
+            const classSelect = document.getElementById('class_id');
+            
+            if (targetAudience === 'all') {
+                classSelection.style.display = 'none';
+                classSelect.required = false;
+            } else {
+                classSelection.style.display = 'block';
+                classSelect.required = true;
+            }
+        }
+        
+        function clearForm() {
+            document.querySelector('form').reset();
+            toggleClassSelection();
+        }
+        
+        // Initialize
+        toggleClassSelection();
+    </script>
+</body>
+</html>

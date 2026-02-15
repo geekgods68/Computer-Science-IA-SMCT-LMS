@@ -1,0 +1,304 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <div class="welcome-text">Welcome, admin!</div>
+        <div class="page-title">Student Feedback</div>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="background-color: {{ '#fee2e2' if category == 'error' else '#d1fae5' }}; border: 1px solid {{ '#f87171' if category == 'error' else '#10b981' }}; border-radius: 8px; padding: 16px; margin-bottom: 16px; color: {{ '#dc2626' if category == 'error' else '#065f46' }};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Filter Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    📊 Filter by Status
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{{ url_for('admin.view_feedback') }}" style="background-color: #6b7280; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            📋 All Feedback
+        </a>
+        <a href="{{ url_for('admin.view_feedback', status='pending') }}" style="background-color: #f59e0b; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            ⏳ Pending
+        </a>
+        <a href="{{ url_for('admin.view_feedback', status='reviewed') }}" style="background-color: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            👁️ Reviewed
+        </a>
+        <a href="{{ url_for('admin.view_feedback', status='resolved') }}" style="background-color: #10b981; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            ✅ Resolved
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    📈 Feedback Statistics
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+    <div style="background-color: #3b82f6; color: white; padding: 24px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 8px;">💬</div>
+        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 4px;">{{ feedback_stats.total }}</div>
+        <div style="font-size: 14px;">Total Feedback</div>
+    </div>
+    <div style="background-color: #f59e0b; color: white; padding: 24px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 8px;">⏳</div>
+        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 4px;">{{ feedback_stats.pending }}</div>
+        <div style="font-size: 14px;">Pending Review</div>
+    </div>
+    <div style="background-color: #3b82f6; color: white; padding: 24px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 8px;">👁️</div>
+        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 4px;">{{ feedback_stats.reviewed }}</div>
+        <div style="font-size: 14px;">Reviewed</div>
+    </div>
+    <div style="background-color: #10b981; color: white; padding: 24px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
+        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 4px;">{{ feedback_stats.resolved }}</div>
+        <div style="font-size: 14px;">Resolved</div>
+    </div>
+</div>
+
+<!-- Search & Filter -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    🔍 Search & Filter
+</div>
+
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Category</label>
+            <select id="categoryFilter" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                <option value="">All Categories</option>
+                <option value="academic">Academic</option>
+                <option value="technical">Technical</option>
+                <option value="general">General</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Rating</label>
+            <select id="ratingFilter" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                <option value="">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Date Range</label>
+            <select id="dateFilter" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff; color: #6b7280;">
+                <option value="">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 16px; font-weight: 500; color: #374151; margin-bottom: 8px;">Search</label>
+            <input type="text" id="searchFeedback" style="width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #ffffff;" placeholder="Search feedback...">
+        </div>
+    </div>
+</div>
+
+<!-- Feedback List Section -->
+<div style="background-color: #3b82f6; color: white; padding: 16px 24px; font-size: 18px; font-weight: 500; margin-bottom: 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+    💬 Feedback Submissions ({{ feedback_list|length }} total)
+</div>
+
+{% if feedback_list %}
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;" id="feedbackTable">
+        <thead>
+            <tr style="background-color: #374151; color: white;">
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Student</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Category</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Rating</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Status</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600; border-right: 1px solid #4b5563;">Date</th>
+                <th style="padding: 16px; text-align: left; font-weight: 600;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feedback in feedback_list %}
+            <tr style="border-bottom: 1px solid #e5e7eb; {{ 'background-color: #f8f9fa;' if loop.index % 2 == 1 }}" data-category="{{ feedback[2] or '' }}" data-rating="{{ feedback[3] or '' }}" data-status="{{ feedback[4] or '' }}">
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    <div style="font-weight: 500;">{{ feedback[1] }}</div>
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if feedback[2] %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">{{ feedback[2] }}</span>
+                    {% else %}
+                        <span style="color: #9ca3af;">General</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                    {% if feedback[3] %}
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="color: #f59e0b;">
+                                {% for i in range(feedback[3]) %}⭐{% endfor %}
+                            </span>
+                            <span style="color: #6b7280; font-size: 14px;">({{ feedback[3] }}/5)</span>
+                        </div>
+                    {% else %}
+                        <span style="color: #9ca3af;">No rating</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; border-right: 1px solid #e5e7eb;">
+                    {% if feedback[4] == 'pending' %}
+                        <span style="background-color: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">⏳ Pending</span>
+                    {% elif feedback[4] == 'reviewed' %}
+                        <span style="background-color: #3b82f6; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">👁️ Reviewed</span>
+                    {% elif feedback[4] == 'resolved' %}
+                        <span style="background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">✅ Resolved</span>
+                    {% else %}
+                        <span style="background-color: #6b7280; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">Unknown</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 16px; color: #374151; border-right: 1px solid #e5e7eb;">
+                    {% if feedback[5] %}
+                        {{ feedback[5].split(' ')[0] }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td style="padding: 16px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="viewFeedback({{ feedback[0] }})" style="background-color: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            👁️ View
+                        </button>
+                        {% if feedback[4] != 'resolved' %}
+                        <button onclick="respondToFeedback({{ feedback[0] }})" style="background-color: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            💬 Respond
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 48px; text-align: center;">
+    <div style="font-size: 4rem; margin-bottom: 16px; color: #9ca3af;">📝</div>
+    <div style="font-size: 18px; font-weight: 500; color: #374151; margin-bottom: 8px;">No feedback submissions yet</div>
+    <div style="color: #6b7280;">Student feedback will appear here when submitted.</div>
+</div>
+{% endif %}
+
+<!-- Response Modal -->
+<div id="responseModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; border-radius: 8px; padding: 24px; min-width: 500px; max-width: 80%; max-height: 80%; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 600; color: #3b82f6; margin: 0; display: flex; align-items: center; gap: 8px;">
+                💬 Respond to Feedback
+            </h3>
+        </div>
+        <div id="responseContent">
+            <div style="text-align: center; color: #6b7280;">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    const ratingFilter = document.getElementById('ratingFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const searchInput = document.getElementById('searchFeedback');
+    const table = document.getElementById('feedbackTable');
+    
+    if (table) {
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        function filterTable() {
+            const categoryValue = categoryFilter.value.toLowerCase();
+            const ratingValue = ratingFilter.value;
+            const searchValue = searchInput.value.toLowerCase();
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const category = row.getAttribute('data-category').toLowerCase();
+                const rating = row.getAttribute('data-rating');
+                const rowText = row.textContent.toLowerCase();
+                
+                const categoryMatch = categoryValue === '' || category.includes(categoryValue);
+                const ratingMatch = ratingValue === '' || rating === ratingValue;
+                const searchMatch = searchValue === '' || rowText.includes(searchValue);
+                
+                if (categoryMatch && ratingMatch && searchMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+
+        categoryFilter.addEventListener('change', filterTable);
+        ratingFilter.addEventListener('change', filterTable);
+        dateFilter.addEventListener('change', filterTable);
+        searchInput.addEventListener('input', filterTable);
+    }
+
+    // Add focus styles for form elements
+    const inputs = document.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = '#d1d5db';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+
+function viewFeedback(feedbackId) {
+    // Implement view feedback functionality
+    alert('View feedback: ' + feedbackId);
+}
+
+function respondToFeedback(feedbackId) {
+    // Implement respond to feedback functionality
+    alert('Respond to feedback: ' + feedbackId);
+}
+</script>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+    text-decoration: none !important;
+}
+
+input::placeholder {
+    color: #9ca3af;
+}
+
+select:invalid {
+    color: #9ca3af;
+}
+
+select option {
+    color: #374151;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+</style>
+{% endblock %}

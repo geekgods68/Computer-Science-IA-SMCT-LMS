@@ -1,0 +1,321 @@
+{% extends 'admin/sidebar.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Manage Users</h2>
+    <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add New User
+    </a>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Users</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="roleFilter" class="form-label">Filter by Role</label>
+                <select id="roleFilter" class="form-select">
+                    <option value="">All Roles</option>
+                    <option value="admin">Admin</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="searchUser" class="form-label">Search by Username</label>
+                <input type="text" id="searchUser" class="form-control" placeholder="Type username to search...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people"></i> All Users ({{ users|length }} total)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="usersTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Created On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr data-role="{{ user[2].lower() if user[2] else 'no role' }}" data-username="{{ user[1].lower() }}">
+                        <td>{{ user[0] }}</td>
+                        <td>
+                            <strong>{{ user[1] }}</strong>
+                            {% if user[0] == current_user.id %}
+                                <span class="badge bg-info ms-2">You</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user[2] == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif user[2] == 'teacher' %}
+                                <span class="badge bg-success">Teacher</span>
+                            {% elif user[2] == 'student' %}
+                                <span class="badge bg-primary">Student</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No Role</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user[3] %}
+                                {{ user[3].split(' ')[0] }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" title="View Details" onclick="viewUser({{ user[0] }}, '{{ user[1] }}', '{{ user[2] or 'No Role' }}')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                
+                                {% if user[2] == 'teacher' %}
+                                <a href="{{ url_for('admin.edit_teacher', teacher_id=user[0]) }}" class="btn btn-outline-warning" title="Edit Teacher Assignments">
+                                    <i class="bi bi-journal-text"></i>
+                                </a>
+                                {% elif user[2] == 'student' %}
+                                <a href="{{ url_for('admin.edit_student', student_id=user[0]) }}" class="btn btn-outline-info" title="Edit Student Assignments">
+                                    <i class="bi bi-person-badge"></i>
+                                </a>
+                                {% endif %}
+                                
+                                <button class="btn btn-outline-secondary" title="Edit User" onclick="editUser({{ user[0] }}, '{{ user[1] }}', '{{ user[2] or 'No Role' }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                
+                                {% if user[0] != current_user.id %}
+                                <button class="btn btn-outline-danger" title="Delete User" onclick="confirmDelete({{ user[0] }}, '{{ user[1] }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-outline-secondary" disabled title="Cannot delete yourself">
+                                    <i class="bi bi-lock"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirm User Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                <p>Are you sure you want to delete the user <strong id="deleteUsername"></strong>?</p>
+                <p class="text-muted">This will:</p>
+                <ul class="text-muted">
+                    <li>Remove the user account permanently</li>
+                    <li>Remove all role assignments</li>
+                    <li>Remove class assignments (for students)</li>
+                    <li>Keep historical data (doubts, announcements) but mark as deleted user</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="POST" action="" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailsModalLabel">
+                    <i class="bi bi-person-circle"></i> User Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="userDetailsContent">
+                    <!-- User details will be loaded here via JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Filter functionality
+document.getElementById('roleFilter').addEventListener('change', filterUsers);
+document.getElementById('searchUser').addEventListener('input', filterUsers);
+
+function filterUsers() {
+    const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+    const searchTerm = document.getElementById('searchUser').value.toLowerCase();
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    
+    rows.forEach(row => {
+        const role = row.getAttribute('data-role');
+        const username = row.getAttribute('data-username');
+        
+        const roleMatch = roleFilter === '' || role === roleFilter;
+        const searchMatch = searchTerm === '' || username.includes(searchTerm);
+        
+        if (roleMatch && searchMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function confirmDelete(userId, username) {
+    document.getElementById('deleteUserForm').action = `/admin/delete_user/${userId}`;
+    document.getElementById('deleteUsername').textContent = username;
+    new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+}
+
+function viewUser(userId, username, role) {
+    // Show loading message
+    document.getElementById('userDetailsContent').innerHTML = '<div class="text-center"><i class="bi bi-hourglass-split"></i> Loading...</div>';
+    new bootstrap.Modal(document.getElementById('userDetailsModal')).show();
+    
+    // Fetch detailed user information
+    fetch(`/admin/get_user_details/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('userDetailsContent').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            let content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>User ID:</strong></td><td>${data.id}</td></tr>
+                            <tr><td><strong>Username:</strong></td><td>${data.username}</td></tr>
+                            <tr><td><strong>Role:</strong></td><td><span class="badge bg-${getRoleBadgeColor(data.role)}">${data.role}</span></td></tr>
+                            <tr><td><strong>Created On:</strong></td><td>${data.created_on}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+            `;
+            
+            if (data.role === 'teacher') {
+                content += `
+                        <h6 class="text-success">Teaching Details</h6>
+                        <div class="mb-3">
+                            <strong>Subjects:</strong><br>
+                            ${data.subjects && data.subjects.length > 0 ? 
+                                data.subjects.map(subject => `<span class="badge bg-info me-1">${subject}</span>`).join('') : 
+                                '<span class="text-muted">No subjects assigned</span>'
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <strong>Classes:</strong><br>
+                            ${data.classes && data.classes.length > 0 ? 
+                                data.classes.map(cls => `<span class="badge bg-success me-1">${cls}</span>`).join('') : 
+                                '<span class="text-muted">No classes assigned</span>'
+                            }
+                        </div>
+                `;
+            } else if (data.role === 'student') {
+                content += `
+                        <h6 class="text-primary">Student Details</h6>
+                        <div class="mb-3">
+                            <strong>Enrolled Classes:</strong><br>
+                            ${data.student_classes && data.student_classes.length > 0 ? 
+                                data.student_classes.map(cls => `<span class="badge bg-primary me-1">${cls}</span>`).join('') : 
+                                '<span class="text-muted">No classes assigned</span>'
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <strong>Subject Interests:</strong><br>
+                            ${data.subject_interests && data.subject_interests.length > 0 ? 
+                                data.subject_interests.map(subject => `<span class="badge bg-info me-1">${subject}</span>`).join('') : 
+                                '<span class="text-muted">No subject interests</span>'
+                            }
+                        </div>
+                `;
+            } else {
+                content += `
+                        <h6 class="text-secondary">Additional Information</h6>
+                        <p class="text-muted">No additional role-specific information available.</p>
+                `;
+            }
+            
+            content += `
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('userDetailsContent').innerHTML = content;
+        })
+        .catch(error => {
+            document.getElementById('userDetailsContent').innerHTML = `<div class="alert alert-danger">Error loading user details: ${error.message}</div>`;
+        });
+}
+
+function getRoleBadgeColor(role) {
+    switch(role.toLowerCase()) {
+        case 'admin': return 'danger';
+        case 'teacher': return 'success';
+        case 'student': return 'primary';
+        default: return 'secondary';
+    }
+}
+
+function editUser(userId, username, role) {
+    if (role === 'teacher') {
+        window.location.href = `/admin/edit_teacher/${userId}`;
+    } else if (role === 'student') {
+        window.location.href = `/admin/edit_student/${userId}`;
+    } else {
+        alert('Edit functionality not available for this user type: ' + username);
+    }
+}
+</script>
+{% endblock %}

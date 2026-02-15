@@ -1,0 +1,108 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+        <!-- Welcome Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card p-4">
+                    <h1 class="text-primary mb-0">
+                        <i class="fas fa-user-graduate me-3"></i>Welcome, {{ session.get('name', 'Student') }}!
+                    </h1>
+                    <p class="text-muted mb-0">Here's your academic overview</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="dashboard-card p-4 text-center">
+                    <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                    <div class="stat-number">{{ stats.enrolled_classes }}</div>
+                    <h5>Enrolled Classes</h5>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="dashboard-card p-4 text-center">
+                    <i class="fas fa-tasks fa-3x text-warning mb-3"></i>
+                    <div class="stat-number">{{ stats.pending_assignments }}</div>
+                    <h5>Pending Assignments</h5>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="dashboard-card p-4 text-center">
+                    <i class="fas fa-bullhorn fa-3x text-info mb-3"></i>
+                    <div class="stat-number">{{ stats.announcements_count }}</div>
+                    <h5>Announcements</h5>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="dashboard-card p-4 text-center">
+                    <i class="fas fa-bell fa-3x text-danger mb-3"></i>
+                    <div class="stat-number">{{ notifications|length }}</div>
+                    <h5>Notifications</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card p-4">
+                    <h3 class="text-primary mb-3">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.classes') }}" class="btn btn-primary w-100 py-3">
+                                <i class="fas fa-chalkboard-teacher fa-2x d-block mb-2"></i>
+                                My Classes
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.homework') }}" class="btn btn-warning w-100 py-3">
+                                <i class="fas fa-clipboard-list fa-2x d-block mb-2"></i>
+                                Homework
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.announcements') }}" class="btn btn-info w-100 py-3">
+                                <i class="fas fa-megaphone fa-2x d-block mb-2"></i>
+                                Announcements
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('student.feedback') }}" class="btn btn-success w-100 py-3">
+                                <i class="fas fa-comment-alt fa-2x d-block mb-2"></i>
+                                Feedback
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Notifications -->
+        {% if notifications %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card p-4">
+                    <h3 class="text-primary mb-3">
+                        <i class="fas fa-bell me-2"></i>Recent Notifications
+                    </h3>
+                    {% for notification in notifications[:5] %}
+                    <div class="alert alert-light d-flex align-items-center">
+                        <i class="fas fa-info-circle text-primary me-3"></i>
+                        <div>
+                            <strong>{{ notification[1] }}</strong>
+                            <small class="text-muted d-block">{{ notification[2] }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+{% endblock %}
